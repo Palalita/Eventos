@@ -22,9 +22,11 @@ const estadoLabel: Record<string, string> = {
 
 export default async function Home() {
   const session = await verifySession();
-  const user = await db.user.findUniqueOrThrow({ where: { id: session.userId } });
-  const settings = await getEventSettings();
-  const flags = await getSectionFlags();
+  const [user, settings, flags] = await Promise.all([
+    db.user.findUniqueOrThrow({ where: { id: session.userId } }),
+    getEventSettings(),
+    getSectionFlags(),
+  ]);
 
   const fechaFormateada = new Intl.DateTimeFormat("es-GT", {
     dateStyle: "full",
@@ -286,6 +288,7 @@ async function MediaGallery({ phase, title }: { phase: Phase; title: string }) {
               mediaType={item.mediaType}
               alt={item.description ?? "Foto del evento"}
               loading={index < 6 ? "eager" : "lazy"}
+              autoPlay={item.mediaType === "VIDEO"}
             />
           ))}
         </div>

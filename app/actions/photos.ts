@@ -91,6 +91,35 @@ export async function uploadPhoto(
   return { success: true };
 }
 
+// Usado tras una subida directa navegador -> Vercel Blob (ver UploadForm):
+// el archivo ya está en Blob, aquí solo se crea el registro en la BD.
+export async function createUploadedVideoRequest(input: {
+  photoId: string;
+  fileUrl: string;
+  phase: "PRE_EVENT" | "EVENT";
+  description: string | null;
+}) {
+  const session = await verifySession();
+
+  if (!input.fileUrl.includes(`pending/${input.photoId}.`)) {
+    throw new Error("URL de archivo inválida");
+  }
+
+  await db.photoRequest.create({
+    data: {
+      id: input.photoId,
+      userId: session.userId,
+      fileUrl: input.fileUrl,
+      mediaType: "VIDEO",
+      phase: input.phase,
+      description: input.description,
+      status: "PENDING",
+    },
+  });
+
+  revalidatePath("/");
+}
+
 export async function reviewPhoto(formData: FormData) {
   await requireAdmin();
 
