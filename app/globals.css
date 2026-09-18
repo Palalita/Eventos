@@ -146,25 +146,18 @@ a {
 
 .gallery-section {
   padding: 1.5rem 1.5rem 3rem;
-  max-width: 1200px;
+  max-width: 1800px;
   margin: 0 auto;
 }
 
-/* Collage tipo Pinterest: columnas de distinta altura, sin recortar fotos */
+/* Collage tipo Pinterest: columnas de distinta altura, sin recortar fotos.
+   column-width (en vez de breakpoints fijos con column-count) deja que el
+   navegador calcule cuántas columnas entran, así el collage siempre llena
+   el ancho disponible sin dejar espacio vacío en pantallas anchas. */
 .collage {
-  column-count: 2;
+  column-width: 260px;
   column-gap: 0.9rem;
   margin-top: 1.5rem;
-}
-@media (min-width: 640px) {
-  .collage {
-    column-count: 3;
-  }
-}
-@media (min-width: 1000px) {
-  .collage {
-    column-count: 4;
-  }
 }
 .collage img,
 .collage video {
