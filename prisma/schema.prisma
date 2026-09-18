@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 enum Role {
@@ -38,7 +39,9 @@ model PhotoRequest {
   id            String      @id @default(cuid())
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
-  fileName      String
+  // URL pública en Vercel Blob. Solo se revela al cliente cuando status es
+  // APPROVED; en PENDING/REJECTED la privacidad la impone /api/fotos/[id].
+  fileUrl       String
   description   String?
   status        PhotoStatus @default(PENDING)
   adminComment  String?

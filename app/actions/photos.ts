@@ -1,8 +1,8 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { mkdir, rename, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { copy, del, put } from "@vercel/blob";
+import sharp from "sharp";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -10,8 +10,8 @@ import { verifySession, requireAdmin } from "@/lib/dal";
 import {
   ALLOWED_MIME_TYPES,
   MAX_FILE_SIZE_BYTES,
-  UPLOADS_ROOT,
-  extensionFromMime,
+  OPTIMIZED_JPEG_QUALITY,
+  OPTIMIZED_MAX_WIDTH,
   statusFolder,
 } from "@/lib/uploads";
 
@@ -36,20 +36,30 @@ export async function uploadPhoto(
     return { error: "Solo se permiten imágenes JPG, PNG o WEBP." };
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    return { error: "La imagen no debe superar los 8MB." };
+    return { error: "La imagen no debe superar los 15MB." };
   }
 
-  const folder = path.join(UPLOADS_ROOT, statusFolder("PENDING"));
-  await mkdir(folder, { recursive: true });
+  const original = Buffer.from(await file.arrayBuffer());
+  // Recodificar a JPEG y limitar el ancho estira mucho el 1GB gratis de Blob
+  // frente a fotos de celular sin comprimir (que suelen pesar varios MB).
+  const optimized = await sharp(original)
+    .rotate()
+    .resize({ width: OPTIMIZED_MAX_WIDTH, withoutEnlargement: true })
+    .jpeg({ quality: OPTIMIZED_JPEG_QUALITY })
+    .toBuffer();
 
-  const fileName = `${randomUUID()}${extensionFromMime(file.type)}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(folder, fileName), buffer);
+  const photoId = randomUUID();
+  const blob = await put(`${statusFolder("PENDING")}/${photoId}.jpg`, optimized, {
+    access: "public",
+    contentType: "image/jpeg",
+    addRandomSuffix: false,
+  });
 
   await db.photoRequest.create({
     data: {
+      id: photoId,
       userId: session.userId,
-      fileName,
+      fileUrl: blob.url,
       description,
       status: "PENDING",
     },
@@ -71,17 +81,21 @@ export async function reviewPhoto(formData: FormData) {
     return;
   }
 
-  const fromFolder = path.join(UPLOADS_ROOT, statusFolder("PENDING"));
-  const toFolder = path.join(UPLOADS_ROOT, statusFolder(decision));
-  await mkdir(toFolder, { recursive: true });
-  await rename(
-    path.join(fromFolder, photo.fileName),
-    path.join(toFolder, photo.fileName)
-  );
+  const newPathname = `${statusFolder(decision)}/${photo.id}.jpg`;
+  const moved = await copy(photo.fileUrl, newPathname, {
+    access: "public",
+    contentType: "image/jpeg",
+  });
+  await del(photo.fileUrl);
 
   await db.photoRequest.update({
     where: { id },
-    data: { status: decision, adminComment, reviewedAt: new Date() },
+    data: {
+      status: decision,
+      adminComment,
+      reviewedAt: new Date(),
+      fileUrl: moved.url,
+    },
   });
 
   revalidatePath("/");

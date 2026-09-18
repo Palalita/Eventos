@@ -78,7 +78,7 @@ export default async function Home() {
 function CollageGallery({
   galeria,
 }: {
-  galeria: { id: string; fileName: string; description: string | null }[];
+  galeria: { id: string; fileUrl: string; description: string | null }[];
 }) {
   return (
     <section className="gallery-section">
@@ -93,7 +93,7 @@ function CollageGallery({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={foto.id}
-              src={`/api/fotos/${foto.fileName}`}
+              src={foto.fileUrl}
               alt={foto.description ?? "Foto del evento"}
               loading={index < 6 ? "eager" : "lazy"}
             />
@@ -141,7 +141,7 @@ async function AdminSection() {
           {pendientes.map((foto) => (
             <li key={foto.id} className="review-item">
               <Image
-                src={`/api/fotos/${foto.fileName}`}
+                src={`/api/fotos/${foto.id}`}
                 alt={foto.description ?? "Foto del evento"}
                 width={220}
                 height={220}
@@ -221,7 +221,7 @@ async function GuestToolbar({
               {misFotos.map((foto) => (
                 <li key={foto.id} className="photo-list-item">
                   <Image
-                    src={`/api/fotos/${foto.fileName}`}
+                    src={`/api/fotos/${foto.id}`}
                     alt={foto.description ?? "Foto del evento"}
                     width={120}
                     height={120}
