@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  GUEST
+}
+
+enum PhotoStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(GUEST)
+
+  // Invitación con QR único para asistir al evento
+  qrToken      String    @unique @default(cuid())
+  attended     Boolean   @default(false)
+  checkedInAt  DateTime?
+
+  photoRequests PhotoRequest[]
+  createdAt    DateTime @default(now())
+}
+
+model PhotoRequest {
+  id            String      @id @default(cuid())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  fileName      String
+  description   String?
+  status        PhotoStatus @default(PENDING)
+  adminComment  String?
+  createdAt     DateTime    @default(now())
+  reviewedAt    DateTime?
+}
