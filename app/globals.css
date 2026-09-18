@@ -166,7 +166,8 @@ a {
     column-count: 4;
   }
 }
-.collage img {
+.collage img,
+.collage video {
   width: 100%;
   display: block;
   margin-bottom: 0.9rem;
@@ -174,6 +175,7 @@ a {
   border: 4px solid white;
   box-shadow: 0 6px 16px rgba(122, 31, 75, 0.18);
   break-inside: avoid;
+  background: #000;
 }
 .gallery-empty {
   text-align: center;
@@ -344,9 +346,19 @@ a {
   gap: 1rem;
   align-items: flex-start;
 }
-.photo-list-item img {
+.thumb-media {
   border-radius: 10px;
   object-fit: cover;
+  background: #000;
+  flex-shrink: 0;
+}
+.thumb-media--lg {
+  width: 220px;
+  height: 220px;
+}
+.thumb-media--sm {
+  width: 120px;
+  height: 120px;
 }
 .status-badge {
   display: inline-block;
@@ -410,10 +422,6 @@ a {
   align-items: flex-start;
   border-bottom: 1px solid var(--rose-light);
   padding-bottom: 1.5rem;
-}
-.review-item img {
-  border-radius: 10px;
-  object-fit: cover;
 }
 .review-actions {
   display: flex;
@@ -481,11 +489,14 @@ a {
 }
 .floating-bar-inner {
   display: flex;
-  gap: 0.7rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
   background: white;
   padding: 0.5rem;
   border-radius: 999px;
   box-shadow: 0 8px 24px rgba(122, 31, 75, 0.28);
+  max-width: calc(100vw - 2rem);
 }
 .floating-btn {
   display: flex;
@@ -537,4 +548,64 @@ a {
   line-height: 1;
   color: var(--rose);
   cursor: pointer;
+}
+
+/* Contenido editable (invitación / save the date) para invitados */
+.content-section {
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+.content-section p {
+  white-space: pre-wrap;
+}
+
+/* Toggles y listas en páginas de administración */
+.toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.toggle-item input {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 560px;
+}
+.settings-form label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 0.6rem;
+}
+.settings-form input,
+.settings-form textarea {
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--rose-light);
+  font-family: var(--font-body);
+}
+.settings-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.device-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+.device-table th,
+.device-table td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--rose-light);
+  font-size: 0.9rem;
 }

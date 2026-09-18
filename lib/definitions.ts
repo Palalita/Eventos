@@ -31,5 +31,6 @@ export type LoginFormState =
         password?: string[];
       };
       message?: string;
+      pendingDeviceVerification?: boolean;
     }
   | undefined;

@@ -3,7 +3,11 @@
 import { useActionState, useRef } from "react";
 import { uploadPhoto, UploadPhotoState } from "@/app/actions/photos";
 
-export default function UploadForm() {
+export default function UploadForm({
+  phase,
+}: {
+  phase: "PRE_EVENT" | "EVENT";
+}) {
   const [state, action, pending] = useActionState<UploadPhotoState, FormData>(
     uploadPhoto,
     undefined
@@ -19,16 +23,29 @@ export default function UploadForm() {
       }}
       className="upload-form"
     >
-      <label htmlFor="foto">Foto del evento</label>
-      <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp" required />
+      <input type="hidden" name="phase" value={phase} />
 
-      <label htmlFor="descripcion">Descripción (opcional)</label>
-      <input id="descripcion" name="descripcion" type="text" placeholder="Ej: Foto del vals" />
+      <label htmlFor={`foto-${phase}`}>Foto o video</label>
+      <input
+        id={`foto-${phase}`}
+        name="foto"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+        required
+      />
+
+      <label htmlFor={`descripcion-${phase}`}>Descripción (opcional)</label>
+      <input
+        id={`descripcion-${phase}`}
+        name="descripcion"
+        type="text"
+        placeholder="Ej: Foto del vals"
+      />
 
       {state && "error" in state && <p className="form-error">{state.error}</p>}
       {state && "success" in state && (
         <p className="form-success">
-          ¡Foto enviada! Quedará pendiente hasta que el administrador la revise.
+          ¡Enviado! Quedará pendiente hasta que el administrador lo revise.
         </p>
       )}
 

@@ -19,6 +19,17 @@ enum PhotoStatus {
   REJECTED
 }
 
+// Antes del evento (recuerdos, mensajes) vs. el día del evento en sí.
+enum EventPhase {
+  PRE_EVENT
+  EVENT
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -31,8 +42,10 @@ model User {
   attended     Boolean   @default(false)
   checkedInAt  DateTime?
 
-  photoRequests PhotoRequest[]
-  createdAt    DateTime @default(now())
+  photoRequests       PhotoRequest[]
+  trustedDevices      TrustedDevice[]
+  deviceVerifications DeviceVerification[]
+  createdAt           DateTime @default(now())
 }
 
 model PhotoRequest {
@@ -42,9 +55,53 @@ model PhotoRequest {
   // URL pública en Vercel Blob. Solo se revela al cliente cuando status es
   // APPROVED; en PENDING/REJECTED la privacidad la impone /api/fotos/[id].
   fileUrl       String
+  mediaType     MediaType   @default(PHOTO)
+  phase         EventPhase  @default(EVENT)
   description   String?
   status        PhotoStatus @default(PENDING)
   adminComment  String?
   createdAt     DateTime    @default(now())
   reviewedAt    DateTime?
+}
+
+// Dispositivo desde el que el admin ya confirmó su identidad por correo.
+model TrustedDevice {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  tokenHash  String   @unique
+  label      String?
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+}
+
+// Verificación pendiente por correo cuando el admin entra desde un
+// dispositivo que no está en TrustedDevice.
+model DeviceVerification {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  tokenHash   String   @unique
+  deviceToken String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+// Activar/desactivar secciones del sitio para los invitados.
+model SiteSection {
+  key     String  @id
+  label   String
+  enabled Boolean @default(true)
+}
+
+// Contenido editable del evento (una sola fila).
+model EventSettings {
+  id                String   @id @default("singleton")
+  quinceaneraNombre String
+  fechaEvento       DateTime
+  lugar             String
+  lema              String
+  indicaciones      String   @default("")
+  saveTheDateMensaje String  @default("")
+  updatedAt         DateTime @updatedAt
 }
