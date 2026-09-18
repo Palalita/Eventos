@@ -4,45 +4,31 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { db } from "@/lib/db";
 
+// proxy.ts limpia la cookie cuando la cuenta ya no existe (ahí sí se pueden
+// mutar cookies). Aquí solo podemos redirigir, así que revalidamos la
+// existencia de todos modos: cierra el hueco donde una cuenta borrada podría
+// seguir ejecutando Server Actions con una sesión firmada que aún no expiró.
 export const verifySession = cache(async () => {
   const session = await getSession();
   if (!session?.userId) {
     redirect("/login");
   }
-  return session;
-});
 
-export const getCurrentUser = cache(async () => {
-  const session = await getSession();
-  if (!session?.userId) return null;
-
-  const user = await db.user.findUnique({
+  const exists = await db.user.findUnique({
     where: { id: session.userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      qrToken: true,
-      attended: true,
-      checkedInAt: true,
-    },
+    select: { id: true },
   });
-  return user;
+  if (!exists) {
+    redirect("/login");
+  }
+
+  return session;
 });
 
 export async function requireAdmin() {
   const session = await verifySession();
   if (session.role !== "ADMIN") {
-    redirect("/panel");
-  }
-  return session;
-}
-
-export async function requireGuest() {
-  const session = await verifySession();
-  if (session.role !== "GUEST") {
-    redirect("/admin");
+    redirect("/");
   }
   return session;
 }

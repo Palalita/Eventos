@@ -36,7 +36,7 @@ export async function signup(_state: SignupFormState, formData: FormData) {
   });
 
   await createSession({ userId: user.id, role: user.role });
-  redirect("/panel");
+  redirect("/");
 }
 
 export async function login(_state: LoginFormState, formData: FormData) {
@@ -62,7 +62,7 @@ export async function login(_state: LoginFormState, formData: FormData) {
   }
 
   await createSession({ userId: user.id, role: user.role });
-  redirect(user.role === "ADMIN" ? "/admin" : "/panel");
+  redirect("/");
 }
 
 export async function logout() {

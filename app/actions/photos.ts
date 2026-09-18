@@ -55,7 +55,7 @@ export async function uploadPhoto(
     },
   });
 
-  revalidatePath("/panel");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -84,7 +84,7 @@ export async function reviewPhoto(formData: FormData) {
     data: { status: decision, adminComment, reviewedAt: new Date() },
   });
 
-  revalidatePath("/admin");
+  revalidatePath("/");
 }
 
 export async function checkInGuest(formData: FormData) {

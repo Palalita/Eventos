@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireAdmin } from "@/lib/dal";
 import { db } from "@/lib/db";
 import QrScanner from "./QrScanner";
@@ -14,6 +15,9 @@ export default async function InvitadosPage() {
     <main className="dashboard">
       <header className="dashboard-header">
         <h1>Invitados y asistencia</h1>
+        <Link href="/" className="btn btn-ghost">
+          ← Volver al inicio
+        </Link>
       </header>
 
       <QrScanner />
