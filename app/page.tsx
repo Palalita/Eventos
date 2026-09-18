@@ -7,7 +7,7 @@ import { logout } from "@/app/actions/auth";
 import { reviewPhoto } from "@/app/actions/photos";
 import Countdown from "./Countdown";
 import UploadForm from "./UploadForm";
-import Disclosure from "./Disclosure";
+import ModalButton from "./ModalButton";
 
 const fechaFormateada = new Intl.DateTimeFormat("es-GT", {
   dateStyle: "full",
@@ -31,7 +31,7 @@ export default async function Home() {
   });
 
   return (
-    <main>
+    <main style={user.role === "GUEST" ? { paddingBottom: "5rem" } : undefined}>
       <header className="dashboard-header" style={{ padding: "1.5rem 1.5rem 0" }}>
         <div>
           <p className="hero-eyebrow" style={{ fontSize: "1.2rem", margin: 0 }}>
@@ -182,20 +182,24 @@ async function GuestToolbar({
   attended: boolean;
   userId: string;
 }) {
+  // Las aprobadas ya se ven en el collage; aquí solo importa lo que sigue
+  // en trámite (pendiente o rechazada).
   const misFotos = await db.photoRequest.findMany({
-    where: { userId },
+    where: { userId, status: { not: "APPROVED" } },
     orderBy: { createdAt: "desc" },
   });
 
   return (
-    <div className="guest-toolbar">
-      <Disclosure label="Ver mi código QR" openLabel="Ocultar código QR">
+    <div className="floating-bar">
+      <div className="floating-bar-inner">
+      <ModalButton label="Ver mi código QR" icon="🎟️">
+        <h2>Mi invitación</h2>
         <div className="invite-qr">
           <Image
             src={`/api/qr/${qrToken}`}
             alt="Código QR de tu invitación"
-            width={180}
-            height={180}
+            width={220}
+            height={220}
             unoptimized
           />
         </div>
@@ -204,14 +208,15 @@ async function GuestToolbar({
             ? "✓ Ya registraste tu asistencia al evento."
             : "Muestra este código QR en la entrada del evento."}
         </p>
-      </Disclosure>
+      </ModalButton>
 
-      <Disclosure label="Solicitar subir foto" openLabel="Cerrar formulario">
+      <ModalButton label="Subir foto" icon="📷">
+        <h2>Solicitar subir foto</h2>
         <UploadForm />
 
         {misFotos.length > 0 && (
           <>
-            <h3 style={{ marginTop: "1.5rem" }}>Mis fotos</h3>
+            <h3 style={{ marginTop: "1.5rem" }}>Mis fotos en trámite</h3>
             <ul className="photo-list">
               {misFotos.map((foto) => (
                 <li key={foto.id} className="photo-list-item">
@@ -236,7 +241,8 @@ async function GuestToolbar({
             </ul>
           </>
         )}
-      </Disclosure>
+      </ModalButton>
+      </div>
     </div>
   );
 }
