@@ -24,6 +24,7 @@ export default async function InvitadosPage() {
 
       <section className="card">
         <h2>Lista de invitados</h2>
+        <div className="table-scroll">
         <table className="guest-table">
           <thead>
             <tr>
@@ -48,6 +49,7 @@ export default async function InvitadosPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </section>
     </main>
   );

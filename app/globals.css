@@ -118,6 +118,16 @@ a {
   display: flex;
   gap: 1.5rem;
   margin-top: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+@media (max-width: 380px) {
+  .countdown {
+    gap: 0.8rem;
+  }
+  .countdown-value {
+    font-size: 1.6rem;
+  }
 }
 .countdown-item {
   display: flex;
@@ -296,8 +306,10 @@ a {
 }
 .dashboard-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1.5rem;
 }
 .card {
@@ -336,6 +348,7 @@ a {
 }
 .photo-list-item {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: flex-start;
 }
@@ -411,6 +424,7 @@ a {
 }
 .review-item {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: flex-start;
   border-bottom: 1px solid var(--rose-light);
@@ -432,10 +446,13 @@ a {
   gap: 0.6rem;
 }
 
+.table-scroll {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
 .guest-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
 }
 .guest-table th,
 .guest-table td {
@@ -443,6 +460,7 @@ a {
   padding: 0.5rem 0.6rem;
   border-bottom: 1px solid var(--rose-light);
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .qr-video {
@@ -593,7 +611,6 @@ a {
 .device-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
 }
 .device-table th,
 .device-table td {
@@ -601,4 +618,5 @@ a {
   padding: 0.5rem 0.6rem;
   border-bottom: 1px solid var(--rose-light);
   font-size: 0.9rem;
+  white-space: nowrap;
 }

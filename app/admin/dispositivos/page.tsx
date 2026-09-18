@@ -30,6 +30,7 @@ export default async function DispositivosPage() {
         {devices.length === 0 ? (
           <p>Aún no hay dispositivos confirmados.</p>
         ) : (
+          <div className="table-scroll">
           <table className="device-table">
             <thead>
               <tr>
@@ -65,6 +66,7 @@ export default async function DispositivosPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
     </main>
