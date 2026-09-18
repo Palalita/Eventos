@@ -7,6 +7,7 @@ import { logout } from "@/app/actions/auth";
 import { reviewPhoto } from "@/app/actions/photos";
 import Countdown from "./Countdown";
 import UploadForm from "./UploadForm";
+import Disclosure from "./Disclosure";
 
 const fechaFormateada = new Intl.DateTimeFormat("es-GT", {
   dateStyle: "full",
@@ -26,7 +27,7 @@ export default async function Home() {
   const galeria = await db.photoRequest.findMany({
     where: { status: "APPROVED" },
     orderBy: { reviewedAt: "desc" },
-    take: 24,
+    take: 40,
   });
 
   return (
@@ -60,33 +61,46 @@ export default async function Home() {
       </section>
 
       {user.role === "ADMIN" ? (
-        <AdminSection />
+        <>
+          <AdminSection />
+          <CollageGallery galeria={galeria} />
+        </>
       ) : (
-        <GuestSection qrToken={user.qrToken} attended={user.attended} userId={user.id} />
+        <>
+          <CollageGallery galeria={galeria} />
+          <GuestToolbar qrToken={user.qrToken} attended={user.attended} userId={user.id} />
+        </>
       )}
-
-      <section className="gallery-section">
-        <h2>Galería del evento</h2>
-        {galeria.length === 0 ? (
-          <p className="gallery-empty">
-            Aquí aparecerán las fotos aprobadas del evento.
-          </p>
-        ) : (
-          <div className="gallery-grid">
-            {galeria.map((foto) => (
-              <Image
-                key={foto.id}
-                src={`/api/fotos/${foto.fileName}`}
-                alt={foto.description ?? "Foto del evento"}
-                width={220}
-                height={180}
-                unoptimized
-              />
-            ))}
-          </div>
-        )}
-      </section>
     </main>
+  );
+}
+
+function CollageGallery({
+  galeria,
+}: {
+  galeria: { id: string; fileName: string; description: string | null }[];
+}) {
+  return (
+    <section className="gallery-section">
+      <h2>Galería del evento</h2>
+      {galeria.length === 0 ? (
+        <p className="gallery-empty">
+          Aquí aparecerán las fotos aprobadas del evento.
+        </p>
+      ) : (
+        <div className="collage">
+          {galeria.map((foto, index) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={foto.id}
+              src={`/api/fotos/${foto.fileName}`}
+              alt={foto.description ?? "Foto del evento"}
+              loading={index < 6 ? "eager" : "lazy"}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -159,7 +173,7 @@ async function AdminSection() {
   );
 }
 
-async function GuestSection({
+async function GuestToolbar({
   qrToken,
   attended,
   userId,
@@ -174,9 +188,8 @@ async function GuestSection({
   });
 
   return (
-    <div className="dashboard" style={{ paddingTop: 0 }}>
-      <section className="card">
-        <h2>Mi invitación</h2>
+    <div className="guest-toolbar">
+      <Disclosure label="Ver mi código QR" openLabel="Ocultar código QR">
         <div className="invite-qr">
           <Image
             src={`/api/qr/${qrToken}`}
@@ -191,39 +204,39 @@ async function GuestSection({
             ? "✓ Ya registraste tu asistencia al evento."
             : "Muestra este código QR en la entrada del evento."}
         </p>
-      </section>
+      </Disclosure>
 
-      <section className="card">
-        <h2>Solicitar subir foto</h2>
+      <Disclosure label="Solicitar subir foto" openLabel="Cerrar formulario">
         <UploadForm />
-      </section>
 
-      <section className="card">
-        <h2>Mis fotos</h2>
-        {misFotos.length === 0 && <p>Aún no has subido ninguna foto.</p>}
-        <ul className="photo-list">
-          {misFotos.map((foto) => (
-            <li key={foto.id} className="photo-list-item">
-              <Image
-                src={`/api/fotos/${foto.fileName}`}
-                alt={foto.description ?? "Foto del evento"}
-                width={120}
-                height={120}
-                unoptimized
-              />
-              <div>
-                <p className={`status-badge status-${foto.status.toLowerCase()}`}>
-                  {estadoLabel[foto.status]}
-                </p>
-                {foto.description && <p>{foto.description}</p>}
-                {foto.adminComment && (
-                  <p className="admin-comment">Comentario: {foto.adminComment}</p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+        {misFotos.length > 0 && (
+          <>
+            <h3 style={{ marginTop: "1.5rem" }}>Mis fotos</h3>
+            <ul className="photo-list">
+              {misFotos.map((foto) => (
+                <li key={foto.id} className="photo-list-item">
+                  <Image
+                    src={`/api/fotos/${foto.fileName}`}
+                    alt={foto.description ?? "Foto del evento"}
+                    width={120}
+                    height={120}
+                    unoptimized
+                  />
+                  <div>
+                    <p className={`status-badge status-${foto.status.toLowerCase()}`}>
+                      {estadoLabel[foto.status]}
+                    </p>
+                    {foto.description && <p>{foto.description}</p>}
+                    {foto.adminComment && (
+                      <p className="admin-comment">Comentario: {foto.adminComment}</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </Disclosure>
     </div>
   );
 }
