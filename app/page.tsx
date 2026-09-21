@@ -350,10 +350,18 @@ async function MediaGallery({ phase, title }: { phase: Phase; title: string }) {
 // rechazaron), dentro del modal de subida de cada invitado. Usa /api/fotos/[id]
 // como src porque estas fotos NO son públicas todavía — esa ruta verifica
 // que quien pide la imagen sea su dueño (ver app/api/fotos/[id]/route.ts).
+// `take` limitado a propósito: sin tope, un invitado con muchos envíos
+// rechazados (o probando el formulario a repetición) termina viendo docenas
+// de miniaturas cada vez que abre el modal de subir — cada una pide
+// /api/fotos/[id] por separado, lo que puede saturar la conexión del
+// navegador y hasta bloquear el envío de una foto nueva.
+const MIS_ENVIOS_LIMIT = 8;
+
 async function MisEnvios({ phase, userId }: { phase: Phase; userId: string }) {
   const items = await db.photoRequest.findMany({
     where: { userId, phase, status: { not: "APPROVED" } },
     orderBy: { createdAt: "desc" },
+    take: MIS_ENVIOS_LIMIT,
   });
 
   if (items.length === 0) return null;
