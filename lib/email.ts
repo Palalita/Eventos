@@ -125,16 +125,18 @@ export async function sendDeviceVerificationEmail(to: string, verifyUrl: string)
   const { error } = await resend.emails.send({
     from: "Mis XV años <onboarding@resend.dev>",
     to,
-    subject: "Confirma este dispositivo para iniciar sesión",
+    subject: "Verificación de dispositivo requerida",
     html: renderEmailLayout({
-      heading: "Nuevo dispositivo detectado",
+      heading: "Verificación de dispositivo",
       bodyHtml: `
-        Detectamos un inicio de sesión de administrador desde un dispositivo que no reconocemos.
-        Si fuiste vos, confirmalo para entrar; si no, ignorá este correo y tu cuenta seguirá segura.
+        Se detectó un intento de inicio de sesión en el panel de administración desde un
+        dispositivo no reconocido. Si usted realizó este intento, confirme su identidad
+        haciendo clic en el siguiente botón para continuar. Si no reconoce esta actividad,
+        ignore este mensaje: su cuenta permanecerá protegida y no se iniciará ninguna sesión.
       `,
-      ctaLabel: "Confirmar e iniciar sesión",
+      ctaLabel: "Confirmar identidad e iniciar sesión",
       ctaUrl: verifyUrl,
-      footerNote: "Este enlace expira en 15 minutos por tu seguridad.",
+      footerNote: "Por motivos de seguridad, este enlace expirará en 15 minutos.",
     }),
   });
   // Resend no lanza excepción si el envío es rechazado (p. ej. el dominio
