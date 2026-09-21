@@ -18,7 +18,7 @@ export async function sendDeviceVerificationEmail(to: string, verifyUrl: string)
   }
 
   const resend = new Resend(apiKey);
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: "Mis XV años <onboarding@resend.dev>",
     to,
     subject: "Confirma este dispositivo para iniciar sesión",
@@ -28,6 +28,13 @@ export async function sendDeviceVerificationEmail(to: string, verifyUrl: string)
       <p>Este enlace expira en 15 minutos. Si no fuiste tú, ignora este correo.</p>
     `,
   });
+  // Resend no lanza excepción si el envío es rechazado (p. ej. el dominio
+  // de prueba onboarding@resend.dev solo puede mandar al correo dueño de la
+  // cuenta): sin este log, el fallo queda invisible y el admin nunca recibe
+  // el enlace ni ve un error.
+  if (error) {
+    console.error(`[email] Resend rechazó el correo de verificación para ${to}:`, error);
+  }
 }
 
 // Sin RESEND_API_KEY, o si el envío falla (p. ej. el plan de prueba de
@@ -49,7 +56,7 @@ export async function sendInvitationEmail(
   }
 
   const resend = new Resend(apiKey);
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: "Mis XV años <onboarding@resend.dev>",
     to,
     subject: `¡Estás invitado a mis XV años, ${quinceaneraNombre}!`,
@@ -60,4 +67,7 @@ export async function sendInvitationEmail(
       <p>Ingresa a <a href="${registroUrl}">${registroUrl}</a> y usa este código para crear tu cuenta, ver las fotos del evento y subir las tuyas.</p>
     `,
   });
+  if (error) {
+    console.error(`[email] Resend rechazó la invitación para ${to}:`, error);
+  }
 }
