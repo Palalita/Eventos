@@ -87,12 +87,24 @@ export default function NotificationsBell({ items }: { items: NotificationItem[]
     <div className="notifications-bell" ref={containerRef}>
       <button
         type="button"
-        className="btn btn-ghost notifications-toggle"
+        className="notifications-toggle"
         onClick={toggle}
         aria-label="Notificaciones"
         aria-expanded={open}
       >
-        🔔
+        <svg
+          className="notifications-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 3.5c-2.9 0-5 2.3-5 5.2v2.6c0 .6-.2 1.1-.6 1.6l-1.1 1.3c-.7.8-.1 2 .9 2h11.6c1 0 1.6-1.2.9-2l-1.1-1.3c-.4-.5-.6-1-.6-1.6V8.7c0-2.9-2.1-5.2-5-5.2Z" />
+          <path d="M9.8 19.5a2.3 2.3 0 0 0 4.4 0" />
+        </svg>
         {unreadCount > 0 && <span className="notifications-badge">{unreadCount}</span>}
       </button>
 
