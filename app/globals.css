@@ -587,6 +587,17 @@ a {
   margin-top: 0.6rem;
   align-self: flex-start;
 }
+.upload-form .link-button {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: var(--rose);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 .photo-list {
   list-style: none;

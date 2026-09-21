@@ -8,7 +8,7 @@
 //   - video -> upload() de @vercel/blob/client, directo al storage, y recién
 //              después createUploadedVideoRequest solo para crear el
 //              registro en la BD (ver app/api/upload/route.ts para el token).
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import {
   createUploadedVideoRequest,
@@ -27,10 +27,23 @@ export default function UploadForm({
   );
   const [videoState, setVideoState] = useState<UploadPhotoState>(undefined);
   const [videoPending, setVideoPending] = useState(false);
+  const [showDescription, setShowDescription] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const state = videoState ?? actionState;
   const pendingUpload = pending || videoPending;
+
+  // uploadPhoto (la Server Action, para fotos) no pasa por handleSubmit
+  // salvo para armar el FormData, así que el único momento en que sabemos
+  // que ya terminó es cuando cambia actionState: ahí vaciamos el formulario
+  // para que no quede el mismo archivo cargado y el invitado no lo reenvíe
+  // sin querer.
+  useEffect(() => {
+    if (actionState && "success" in actionState) {
+      formRef.current?.reset();
+      setShowDescription(false);
+    }
+  }, [actionState]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     // Siempre a mano, nunca dejando que el <form> dispare su acción nativa
@@ -75,6 +88,7 @@ export default function UploadForm({
 
       setVideoState({ success: true });
       form?.reset();
+      setShowDescription(false);
     } catch (error) {
       setVideoState({
         error: error instanceof Error ? error.message : "No se pudo subir el video.",
@@ -102,13 +116,26 @@ export default function UploadForm({
         required
       />
 
-      <label htmlFor={`descripcion-${phase}`}>Descripción (opcional)</label>
-      <input
-        id={`descripcion-${phase}`}
-        name="descripcion"
-        type="text"
-        placeholder="Ej: Foto del vals"
-      />
+      {showDescription ? (
+        <>
+          <label htmlFor={`descripcion-${phase}`}>Descripción (opcional)</label>
+          <input
+            id={`descripcion-${phase}`}
+            name="descripcion"
+            type="text"
+            placeholder="Ej: Foto del vals"
+            autoFocus
+          />
+        </>
+      ) : (
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => setShowDescription(true)}
+        >
+          ¿Deseas agregar descripción?
+        </button>
+      )}
 
       {state && "error" in state && <p className="form-error">{state.error}</p>}
       {state && "success" in state && (
