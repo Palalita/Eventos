@@ -27,6 +27,7 @@ import Reveal from "./components/Reveal";
 import ScrollHint from "./components/ScrollHint";
 import HeroPhoto from "./components/HeroPhoto";
 import PendingList from "./components/PendingList";
+import NotificationsBell from "./components/NotificationsBell";
 
 type EventSettings = Awaited<ReturnType<typeof getEventSettings>>;
 type SectionFlags = Awaited<ReturnType<typeof getSectionFlags>>;
@@ -52,6 +53,26 @@ export default async function Home() {
   ]);
 
   const fechaFormateada = fechaEventoFormatter.format(settings.fechaEvento);
+
+  // Solo se consulta para invitados: es lo que alimenta la campana de
+  // notificaciones del header (ver NotificationsBell), que a un admin no le
+  // aplica.
+  const notifications =
+    user.role === "GUEST"
+      ? await db.photoRequest.findMany({
+          where: { userId: user.id, status: { not: "PENDING" } },
+          orderBy: { reviewedAt: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            mediaType: true,
+            status: true,
+            description: true,
+            adminComment: true,
+            reviewedAt: true,
+          },
+        })
+      : [];
 
   return (
     <main style={user.role === "GUEST" ? { paddingBottom: "5rem" } : undefined}>
@@ -82,6 +103,7 @@ export default async function Home() {
               </Link>
             </>
           )}
+          {user.role === "GUEST" && <NotificationsBell items={notifications} />}
           <form action={logout}>
             <button type="submit" className="btn btn-ghost">
               Cerrar sesión
@@ -351,15 +373,19 @@ async function MediaGallery({ phase, title }: { phase: Phase; title: string }) {
 // como src porque estas fotos NO son públicas todavía — esa ruta verifica
 // que quien pide la imagen sea su dueño (ver app/api/fotos/[id]/route.ts).
 // `take` limitado a propósito: sin tope, un invitado con muchos envíos
-// rechazados (o probando el formulario a repetición) termina viendo docenas
-// de miniaturas cada vez que abre el modal de subir — cada una pide
-// /api/fotos/[id] por separado, lo que puede saturar la conexión del
-// navegador y hasta bloquear el envío de una foto nueva.
+// acumulados termina viendo docenas de miniaturas cada vez que abre el
+// modal de subir — cada una pide /api/fotos/[id] por separado, lo que
+// puede saturar la conexión del navegador y hasta bloquear el envío de una
+// foto nueva.
 const MIS_ENVIOS_LIMIT = 8;
 
+// Solo lo que sigue PENDING: el resultado de lo ya revisado (aprobado o
+// rechazado) se mueve a la campana de notificaciones del header
+// (NotificationsBell) en vez de quedar acá, para no mezclar "lo que estoy
+// esperando que revisen" con "lo que ya me contestaron".
 async function MisEnvios({ phase, userId }: { phase: Phase; userId: string }) {
   const items = await db.photoRequest.findMany({
-    where: { userId, phase, status: { not: "APPROVED" } },
+    where: { userId, phase, status: "PENDING" },
     orderBy: { createdAt: "desc" },
     take: MIS_ENVIOS_LIMIT,
   });
@@ -383,9 +409,6 @@ async function MisEnvios({ phase, userId }: { phase: Phase; userId: string }) {
                 {estadoLabel[foto.status]}
               </p>
               {foto.description && <p>{foto.description}</p>}
-              {foto.adminComment && (
-                <p className="admin-comment">Comentario: {foto.adminComment}</p>
-              )}
             </div>
           </li>
         ))}

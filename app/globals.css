@@ -650,6 +650,87 @@ a {
   color: var(--rose);
 }
 
+.notifications-bell {
+  position: relative;
+}
+.notifications-toggle {
+  position: relative;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.55rem 0.7rem;
+}
+.notifications-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--rose-dark);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 320px;
+  max-width: 85vw;
+  max-height: 400px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(122, 31, 75, 0.18);
+  padding: 1rem;
+  z-index: 20;
+}
+.notifications-dropdown h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+.notifications-empty {
+  font-size: 0.9rem;
+  color: var(--text);
+  opacity: 0.7;
+}
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.notification-item {
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border-left: 4px solid transparent;
+  background: var(--cream);
+  font-size: 0.85rem;
+}
+.notification-item.notification-approved {
+  border-left-color: #2e7d32;
+}
+.notification-item.notification-rejected {
+  border-left-color: #b3261e;
+}
+.notification-item p {
+  margin: 0;
+}
+.notification-item p + p {
+  margin-top: 0.25rem;
+}
+.notification-date {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
 /* Grid en vez de flex-wrap: así las 3 tarjetas siempre quedan del mismo
    ancho entre sí (con flex-wrap, la primera se estiraba distinto a las
    otras dos según el largo de su texto). */
