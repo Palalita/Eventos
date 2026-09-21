@@ -1,5 +1,8 @@
 "use client";
 
+// Botón flotante que abre un modal con lo que se le pase como `children`.
+// app/page.tsx lo usa dos veces: uno con el QR del invitado adentro, otro
+// con <UploadForm> adentro — ambos comparten este mismo wrapper.
 import { useState, type ReactNode } from "react";
 
 export default function ModalButton({

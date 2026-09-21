@@ -1,8 +1,15 @@
 "use client";
 
+// Escáner de QR para el check-in de invitados en la puerta del evento. Usa
+// la Web API `BarcodeDetector` (nativa del navegador, sin librería externa)
+// para leer el QR desde la cámara, y llama a la Server Action
+// checkInByToken (app/actions/photos.ts) por cada código detectado.
 import { useEffect, useRef, useState } from "react";
 import { checkInByToken } from "@/app/actions/photos";
 
+// El QR codifica la URL completa de la invitación (ver app/api/qr/[token]),
+// no solo el token; esto acepta las dos formas — tanto si viene de la cámara
+// (URL completa) como si el admin pega el token a mano en el campo manual.
 function extractToken(rawValue: string) {
   try {
     const url = new URL(rawValue);
@@ -19,14 +26,22 @@ export default function QrScanner() {
   const [supported, setSupported] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [manualToken, setManualToken] = useState("");
+  // Evita procesar el mismo QR decenas de veces por segundo mientras sigue
+  // frente a la cámara (el detector corre en cada frame).
   const busyRef = useRef(false);
 
+  // `window`/`BarcodeDetector` no existen durante el render en el servidor;
+  // por eso esta detección tiene que ir en un efecto (que solo corre en el
+  // navegador), no directo en el cuerpo del componente.
   useEffect(() => {
     if (typeof window !== "undefined" && !("BarcodeDetector" in window)) {
       setSupported(false);
     }
   }, []);
 
+  // Efecto principal: prende/apaga la cámara según el estado `scanning`, y
+  // mientras está prendida corre un loop con requestAnimationFrame que en
+  // cada frame le pregunta al BarcodeDetector si hay un QR visible.
   useEffect(() => {
     if (!scanning || !supported) return;
 
@@ -122,6 +137,7 @@ export default function QrScanner() {
       <form onSubmit={handleManualSubmit} className="manual-checkin">
         <input
           type="text"
+          aria-label="Código o URL de la invitación"
           placeholder="Pega aquí el código o URL de la invitación"
           value={manualToken}
           onChange={(e) => setManualToken(e.target.value)}

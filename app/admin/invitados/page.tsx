@@ -1,3 +1,6 @@
+// Página de admin: check-in de invitados (escaneando su QR o a mano, ver
+// ./QrScanner.tsx) y la lista completa de invitados con su estado de
+// asistencia.
 import Link from "next/link";
 import { requireAdmin } from "@/lib/dal";
 import { db } from "@/lib/db";

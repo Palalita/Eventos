@@ -1,10 +1,18 @@
 "use client";
 
+// Formulario de /login. `useActionState(login, undefined)` conecta este
+// formulario con la Server Action `login` (app/actions/auth.ts): en cada
+// submit, React llama a login() en el servidor, y lo que esa función
+// devuelve queda disponible acá como `state` (errores de validación,
+// mensaje de "correo o contraseña incorrectos", o el flag de que hay que
+// revisar el correo por verificación de dispositivo).
 import { useActionState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { login } from "@/app/actions/auth";
 
+// Mensajes para el ?device=... que agrega app/verificar-dispositivo/page.tsx
+// cuando redirige acá por un token inválido o vencido.
 const deviceErrorLabel: Record<string, string> = {
   expirado: "El enlace de confirmación ya expiró. Inicia sesión de nuevo.",
   invalido: "El enlace de confirmación no es válido.",

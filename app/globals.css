@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --rose: #b23a63;
-  --rose-dark: #7a1f4b;
-  --rose-light: #f7d9e3;
-  --gold: #caa15a;
+  --rose: #d86c7d;
+  --rose-dark: #8d2536;
+  --rose-light: #f5cbd5;
+  --gold: #bda672;
   --cream: #fff8f5;
-  --text: #3d2233;
+  --text: #212529;
   --font-heading: "Playfair Display", serif;
-  --font-script: "Dancing Script", cursive;
+  --font-script: "Alex Brush", cursive;
+  --font-accent: "Cormorant", serif;
   --font-body: "Poppins", sans-serif;
 }
 
@@ -35,6 +36,20 @@ h3 {
   color: var(--rose-dark);
   margin: 0 0 0.5rem;
 }
+/* Tailwind resetea el tamaño de los encabezados a "inherit"; sin esto,
+   todos los h1/h2/h3 del sitio se ven igual de chicos que un párrafo. */
+h1 {
+  font-size: clamp(1.7rem, 4vw, 2.2rem);
+  line-height: 1.2;
+}
+h2 {
+  font-size: 1.4rem;
+  line-height: 1.3;
+}
+h3 {
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
 
 p {
   line-height: 1.6;
@@ -50,7 +65,8 @@ a {
   padding: 0.6rem 1.4rem;
   border-radius: 999px;
   border: none;
-  font-family: var(--font-body);
+  font-family: var(--font-accent);
+  font-size: 1.05rem;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
@@ -117,7 +133,7 @@ a {
 .countdown {
   display: flex;
   gap: 1.5rem;
-  margin-top: 2rem;
+  margin-top: 0.7rem;
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -147,6 +163,239 @@ a {
   color: var(--rose);
 }
 
+/* --- Hero de invitación para invitados (estilo invitación digital) --- */
+.guest-hero {
+  position: relative;
+  overflow: hidden;
+  /* Siempre ocupa la pantalla completa al entrar (en cualquier
+     dispositivo), y la siguiente sección solo aparece al hacer scroll.
+     justify-content: flex-start (no center) a propósito: así la posición
+     del contador desde arriba es siempre la misma sin importar el alto
+     de la pantalla, y nunca termina tapado por la barra flotante fija —
+     el espacio sobrante (si el contenido no llena toda la pantalla)
+     queda abajo, después del contador, en vez de repartirse y mover el
+     contador según cada dispositivo. */
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.4rem 1.5rem 1.5rem;
+  text-align: center;
+  background: linear-gradient(180deg, var(--rose-light) 0%, var(--cream) 75%);
+}
+/* Ramilletes decorativos de las esquinas. Antes eran un tamaño fijo en px
+   (::before/::after), así que en pantallas anchas se veían minúsculos y
+   dejaban un vacío enorme alrededor de la foto. Ahora son elementos reales
+   (para poder poner los 4, no solo 2 — los pseudo-elementos son máximo
+   uno por lado) y su tamaño escala con el ancho de pantalla. */
+.hero-bloom {
+  position: absolute;
+  width: clamp(160px, 18vw, 320px);
+  height: clamp(160px, 18vw, 320px);
+  background:
+    radial-gradient(circle at 30% 30%, var(--rose-light) 0 40%, transparent 41%),
+    radial-gradient(circle at 62% 22%, var(--gold) 0 22%, transparent 23%),
+    radial-gradient(circle at 72% 62%, var(--rose) 0 28%, transparent 29%),
+    radial-gradient(circle at 20% 68%, var(--rose-light) 0 32%, transparent 33%),
+    radial-gradient(circle at 45% 50%, var(--gold) 0 16%, transparent 17%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hero-bloom--tl {
+  top: -8%;
+  left: -6%;
+}
+.hero-bloom--br {
+  bottom: -8%;
+  right: -6%;
+  transform: rotate(180deg);
+}
+.hero-bloom--tr,
+.hero-bloom--bl {
+  display: none;
+}
+@media (min-width: 900px) {
+  /* Solo en pantallas anchas: en celular estas dos se meterían encima del
+     contenido central. */
+  .hero-bloom--tr,
+  .hero-bloom--bl {
+    display: block;
+    opacity: 0.35;
+  }
+  .hero-bloom--tr {
+    top: -8%;
+    right: -6%;
+    transform: rotate(90deg);
+  }
+  .hero-bloom--bl {
+    bottom: -8%;
+    left: -6%;
+    transform: rotate(-90deg);
+  }
+}
+/* Invita a seguir bajando y de paso le da vida al espacio que sobra abajo
+   del contador en pantallas altas. Fijo a la ventana (como la barra
+   flotante), no al hero: el borde inferior del hero siempre cae un poco
+   por debajo de lo visible (por la altura del header), así que anclarlo
+   ahí lo dejaba fuera de pantalla. Se oculta apenas el usuario scrollea
+   (ver ScrollHint.tsx). */
+.hero-scroll-hint {
+  position: fixed;
+  bottom: 6.5rem;
+  left: 50%;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  color: var(--rose);
+  opacity: 0.65;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  animation: hero-scroll-hint-bounce 2s ease-in-out infinite;
+}
+.hero-scroll-hint--hidden {
+  opacity: 0;
+}
+.hero-scroll-hint svg {
+  width: 20px;
+  height: 20px;
+}
+.hero-scroll-hint span {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+@keyframes hero-scroll-hint-bounce {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-hint {
+    animation: none;
+  }
+}
+@media (max-width: 640px) {
+  .hero-scroll-hint {
+    bottom: 5rem;
+  }
+}
+.hero-eyebrow-italic {
+  position: relative;
+  font-family: var(--font-heading);
+  font-style: italic;
+  color: var(--rose-dark);
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+.hero-polaroid {
+  position: relative;
+  display: inline-block;
+  background: #fff;
+  padding: 0.7rem 0.7rem 1.6rem;
+  border-radius: 4px;
+  box-shadow: 0 14px 32px rgba(122, 31, 75, 0.28);
+  transform: rotate(-1.5deg);
+  margin: 1.6rem auto 0.5rem;
+  /* Escala con la pantalla en vez de quedarse fija en 300px: así en
+     monitores anchos la foto no se ve como una islita chica en medio de
+     un mar rosa vacío. */
+  max-width: clamp(200px, min(22vw, 29vh), 420px);
+}
+.hero-polaroid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 2px;
+}
+.hero-polaroid-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: var(--rose-light);
+  color: var(--rose-dark);
+  font-family: var(--font-script);
+  font-size: 1.6rem;
+  border-radius: 2px;
+  text-align: center;
+  padding: 1rem;
+}
+.hero-seal {
+  position: absolute;
+  bottom: -16px;
+  right: -8px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--rose) 55%, var(--rose-dark) 100%);
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-script);
+  font-size: 1.4rem;
+  box-shadow: 0 4px 10px rgba(122, 31, 75, 0.35);
+  transform: rotate(-8deg);
+}
+.hero-name-wrap {
+  position: relative;
+  margin-top: 0.55rem;
+}
+.hero-name-script {
+  font-family: var(--font-script);
+  color: var(--gold);
+  font-size: clamp(2.6rem, 9vw, 4.6rem);
+  line-height: 1;
+  margin: 0.2rem 0 0.4rem;
+}
+@media (max-width: 640px) {
+  /* En pantallas angostas se achica la foto y los márgenes para que el
+     contenido no quede demasiado apretado. */
+  .hero-polaroid {
+    max-width: 135px;
+    margin: 0.5rem auto 0.4rem;
+  }
+  .hero-name-wrap {
+    margin-top: 0.5rem;
+  }
+  .hero-name-script {
+    font-size: 2.2rem;
+  }
+  .guest-hero .countdown {
+    margin-top: 0.6rem;
+    gap: 1rem;
+  }
+}
+@media (max-width: 380px) {
+  .hero-polaroid {
+    max-width: 92px;
+    margin-top: 0.3rem;
+  }
+  .hero-eyebrow-italic {
+    font-size: 0.8rem;
+  }
+  .hero-name-wrap {
+    margin-top: 0.3rem;
+  }
+  .hero-name-script {
+    font-size: 1.9rem;
+  }
+  .guest-hero .countdown {
+    margin-top: 0.4rem;
+  }
+}
+
 .site-nav {
   display: flex;
   justify-content: flex-end;
@@ -157,7 +406,7 @@ a {
 .gallery-section {
   padding: 1.5rem 1.5rem 3rem;
   max-width: 1800px;
-  margin: 0 auto;
+  margin: 1rem auto 2rem;
 }
 
 /* Collage tipo Pinterest: columnas de distinta altura, sin recortar fotos.
@@ -390,11 +639,14 @@ a {
   color: var(--rose);
 }
 
+/* Grid en vez de flex-wrap: así las 3 tarjetas siempre quedan del mismo
+   ancho entre sí (con flex-wrap, la primera se estiraba distinto a las
+   otras dos según el largo de su texto). */
 .stats-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
-  flex-wrap: wrap;
 }
 .stat {
   background: white;
@@ -446,9 +698,20 @@ a {
   gap: 0.6rem;
 }
 
+/* Sombra sutil en los bordes que avisa que hay más columnas si se
+   desliza — sin esto, una tabla angosta en el celular se ve "cortada" en
+   vez de deslizable. Truco clásico de background-attachment: local. */
 .table-scroll {
   overflow-x: auto;
   margin-top: 1rem;
+  background:
+    linear-gradient(to right, white 30%, rgba(255, 255, 255, 0)) 0 0,
+    linear-gradient(to left, white 30%, rgba(255, 255, 255, 0)) 100% 0,
+    linear-gradient(to right, rgba(122, 31, 75, 0.18), rgba(255, 255, 255, 0)) 0 0,
+    linear-gradient(to left, rgba(122, 31, 75, 0.18), rgba(255, 255, 255, 0)) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 32px 100%, 32px 100%, 12px 100%, 12px 100%;
+  background-attachment: local, local, scroll, scroll;
 }
 .guest-table {
   width: 100%;
@@ -518,11 +781,33 @@ a {
   border: none;
   background: var(--rose);
   color: white;
-  font-family: var(--font-body);
+  font-family: var(--font-accent);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 1rem;
   white-space: nowrap;
   cursor: pointer;
+}
+@media (max-width: 640px) {
+  /* Botones más compactos para que quepan en una sola fila y la barra
+     flotante no crezca demasiado alto sobre el hero. */
+  .floating-bar-inner {
+    gap: 0.4rem;
+    padding: 0.4rem;
+  }
+  .floating-btn {
+    gap: 0.3rem;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
+@media (max-width: 380px) {
+  /* Celulares muy angostos: si no, ni siquiera estos dos botones caben
+     en una fila y la barra se parte en dos, tapando el contador. */
+  .floating-btn {
+    padding: 0.5rem 0.55rem;
+    font-size: 0.72rem;
+    gap: 0.2rem;
+  }
 }
 .floating-btn:hover {
   background: var(--rose-dark);
@@ -561,13 +846,43 @@ a {
   cursor: pointer;
 }
 
+/* Aparición progresiva de secciones al hacer scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Contenido editable (invitación / save the date) para invitados */
 .content-section {
-  max-width: 700px;
-  margin: 0 auto 2rem;
+  max-width: 640px;
+  margin: 2.8rem auto;
   text-align: center;
+  background: var(--cream);
+  border-radius: 14px;
+  padding: 1.8rem 1.6rem;
+  box-shadow: 0 6px 20px rgba(122, 31, 75, 0.1);
+}
+.content-section h2 {
+  font-family: var(--font-script);
+  color: var(--rose);
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
 }
 .content-section p {
+  font-family: var(--font-heading);
+  font-style: italic;
   white-space: pre-wrap;
 }
 

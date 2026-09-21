@@ -1,7 +1,13 @@
 "use client";
 
+// Contador regresivo hasta la fecha del evento; lo usa app/page.tsx pasándole
+// settings.fechaEvento como string ISO. Tiene que ser "use client" porque
+// usa setInterval para actualizarse cada segundo en el navegador — algo que
+// no se puede hacer en un Server Component (que solo renderiza una vez).
 import { useEffect, useState } from "react";
 
+// Función pura (sin estado): dada una fecha objetivo, calcula cuánto falta
+// en días/horas/minutos/segundos. Se recalcula cada segundo desde el efecto.
 function getTimeLeft(target: Date) {
   const diff = Math.max(0, target.getTime() - Date.now());
   return {
@@ -13,17 +19,21 @@ function getTimeLeft(target: Date) {
 }
 
 export default function Countdown({ target }: { target: string }) {
-  const targetDate = new Date(target);
   const [timeLeft, setTimeLeft] = useState<ReturnType<typeof getTimeLeft> | null>(
     null
   );
 
   useEffect(() => {
+    // targetDate se recalcula acá adentro (no en el cuerpo del componente)
+    // para que la única dependencia real del efecto sea `target` (el string
+    // que llega por props): un objeto Date nuevo en cada render rompería el
+    // setInterval de abajo, reiniciándolo constantemente.
+    const targetDate = new Date(target);
     setTimeLeft(getTimeLeft(targetDate));
     const interval = setInterval(() => {
       setTimeLeft(getTimeLeft(targetDate));
     }, 1000);
-    return () => clearInterval(interval);
+    return () => clearInterval(interval); // limpieza al desmontar o si cambia `target`
   }, [target]);
 
   if (!timeLeft) return null;

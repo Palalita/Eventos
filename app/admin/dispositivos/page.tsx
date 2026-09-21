@@ -1,7 +1,12 @@
+// Página de admin: lista los navegadores marcados como confiables (ver
+// lib/device.ts y la verificación por correo en app/actions/auth.ts) y
+// permite revocarlos.
 import Link from "next/link";
 import { requireAdmin } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { revokeTrustedDevice } from "@/app/actions/settings";
+
+const fechaFormatter = new Intl.DateTimeFormat("es-GT", { dateStyle: "medium" });
 
 export default async function DispositivosPage() {
   const session = await requireAdmin();
@@ -44,16 +49,8 @@ export default async function DispositivosPage() {
               {devices.map((device) => (
                 <tr key={device.id}>
                   <td>{device.label ?? "Sin nombre"}</td>
-                  <td>
-                    {new Intl.DateTimeFormat("es-GT", { dateStyle: "medium" }).format(
-                      device.createdAt
-                    )}
-                  </td>
-                  <td>
-                    {new Intl.DateTimeFormat("es-GT", { dateStyle: "medium" }).format(
-                      device.lastSeenAt
-                    )}
-                  </td>
+                  <td>{fechaFormatter.format(device.createdAt)}</td>
+                  <td>{fechaFormatter.format(device.lastSeenAt)}</td>
                   <td>
                     <form action={revokeTrustedDevice}>
                       <input type="hidden" name="id" value={device.id} />

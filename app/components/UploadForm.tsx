@@ -1,5 +1,13 @@
 "use client";
 
+// Formulario de "subir foto o video", usado desde app/page.tsx dentro de un
+// <ModalButton>. Es un componente de cliente porque necesita decidir en el
+// navegador, antes de mandar nada, si el archivo es foto o video y elegir un
+// camino distinto para cada uno (ver handleSubmit más abajo):
+//   - foto  -> Server Action uploadPhoto (viaja como FormData normal)
+//   - video -> upload() de @vercel/blob/client, directo al storage, y recién
+//              después createUploadedVideoRequest solo para crear el
+//              registro en la BD (ver app/api/upload/route.ts para el token).
 import { useActionState, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import {

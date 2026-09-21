@@ -1,10 +1,26 @@
+// Server Actions del panel de administración: qué secciones del sitio están
+// activas, los datos generales del evento, y revocar dispositivos confiables.
+// Las llaman `app/admin/paginas/page.tsx` (updateSiteSections),
+// `app/admin/contenido/page.tsx` (updateEventSettings) y
+// `app/admin/dispositivos/page.tsx` (revokeTrustedDevice).
 "use server";
 
+import { put } from "@vercel/blob";
+import sharp from "sharp";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/dal";
 import { SITE_SECTIONS } from "@/lib/site-sections";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_SIZE_BYTES,
+  OPTIMIZED_JPEG_QUALITY,
+  OPTIMIZED_MAX_WIDTH,
+} from "@/lib/uploads";
 
+// El formulario de app/admin/paginas manda un checkbox por sección; los
+// desmarcados ni siquiera aparecen en el FormData, por eso se compara contra
+// "on" en vez de asumir que la clave existe.
 export async function updateSiteSections(formData: FormData) {
   await requireAdmin();
 
@@ -22,6 +38,8 @@ export async function updateSiteSections(formData: FormData) {
     )
   );
 
+  // Se revalidan ambas: la home (que lee getSectionFlags) y la propia
+  // página de admin (para que el checkbox recién guardado quede reflejado).
   revalidatePath("/");
   revalidatePath("/admin/paginas");
 }
@@ -36,6 +54,8 @@ export async function updateEventSettings(formData: FormData) {
   const indicaciones = (formData.get("indicaciones") as string)?.trim() ?? "";
   const saveTheDateMensaje = (formData.get("saveTheDateMensaje") as string)?.trim() ?? "";
 
+  // Si faltan los campos obligatorios, se corta en silencio (el formulario ya
+  // los marca required en el HTML; esto es un resguardo del lado servidor).
   if (!quinceaneraNombre || !lugar || !lema || !fechaEventoRaw) {
     return;
   }
@@ -44,6 +64,33 @@ export async function updateEventSettings(formData: FormData) {
   // (UTC-6) para que la hora que escribe el admin sea la hora real del salón,
   // sin depender de en qué zona horaria corra el servidor.
   const fechaEvento = new Date(`${fechaEventoRaw}:00-06:00`);
+
+  const fotoPrincipal = formData.get("fotoPrincipal");
+  let fotoPrincipalUrl: string | undefined;
+  if (fotoPrincipal instanceof File && fotoPrincipal.size > 0) {
+    // La foto principal es opcional en este formulario: solo se procesa (y
+    // se pisa en la BD) si el admin efectivamente adjuntó una nueva.
+    if (!ALLOWED_IMAGE_TYPES.includes(fotoPrincipal.type)) {
+      return;
+    }
+    if (fotoPrincipal.size > MAX_IMAGE_SIZE_BYTES) {
+      return;
+    }
+    const body = await sharp(Buffer.from(await fotoPrincipal.arrayBuffer()))
+      .rotate()
+      .resize({ width: OPTIMIZED_MAX_WIDTH, withoutEnlargement: true })
+      .jpeg({ quality: OPTIMIZED_JPEG_QUALITY })
+      .toBuffer();
+    // Mismo nombre de archivo siempre + allowOverwrite: true, así cada foto
+    // principal nueva reemplaza a la anterior en vez de acumular blobs viejos.
+    const blob = await put("settings/foto-principal.jpg", body, {
+      access: "public",
+      contentType: "image/jpeg",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+    fotoPrincipalUrl = blob.url;
+  }
 
   await db.eventSettings.update({
     where: { id: "singleton" },
@@ -54,19 +101,26 @@ export async function updateEventSettings(formData: FormData) {
       fechaEvento,
       indicaciones,
       saveTheDateMensaje,
+      ...(fotoPrincipalUrl ? { fotoPrincipalUrl } : {}),
     },
   });
 
+  // Se revalidan todas las páginas que muestran estos datos.
   revalidatePath("/");
   revalidatePath("/admin/contenido");
   revalidatePath("/login");
   revalidatePath("/registro");
 }
 
+// El admin puede "olvidar" un dispositivo desde app/admin/dispositivos: la
+// próxima vez que se loguee desde ese navegador, va a tener que volver a
+// confirmar por correo.
 export async function revokeTrustedDevice(formData: FormData) {
   const session = await requireAdmin();
   const id = formData.get("id") as string;
 
+  // Se filtra también por userId: un admin solo puede borrar sus propios
+  // dispositivos, nunca los de otro admin.
   await db.trustedDevice.deleteMany({ where: { id, userId: session.userId } });
 
   revalidatePath("/admin/dispositivos");

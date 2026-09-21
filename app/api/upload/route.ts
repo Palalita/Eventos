@@ -1,3 +1,9 @@
+// Route Handler que llama `upload()` de @vercel/blob/client desde
+// app/UploadForm.tsx (componente de cliente) cuando el archivo es un video:
+// el navegador primero le pide un "token de subida" a este endpoint, y
+// después manda el archivo pesado directo a Vercel Blob (no pasa por acá).
+// Una vez subido, UploadForm.tsx llama a createUploadedVideoRequest (en
+// app/actions/photos.ts) para crear el registro en la base de datos.
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";

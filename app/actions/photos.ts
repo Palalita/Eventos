@@ -1,3 +1,13 @@
+// Server Actions del ciclo de vida de una foto/video: subirla, revisarla
+// (aprobar/rechazar) y el check-in de invitados por QR.
+//
+// Quién las llama:
+// - uploadPhoto ← app/UploadForm.tsx (subida de fotos; los videos van por
+//   createUploadedVideoRequest, ver el comentario de esa función)
+// - reviewPhoto ← app/PendingList.tsx (botones aprobar/rechazar del admin)
+// - checkInGuest ← formulario de confirmar asistencia en
+//   app/invitacion/[token]/page.tsx
+// - checkInByToken ← app/admin/invitados/QrScanner.tsx (al escanear un QR)
 "use server";
 
 import { randomUUID } from "node:crypto";
@@ -23,11 +33,15 @@ export type UploadPhotoState =
   | { success: true }
   | undefined;
 
+// Sube una foto (o un video chico) directo desde el formulario: el archivo
+// viaja del navegador al servidor dentro del FormData, y de acá sale hacia
+// Vercel Blob. Para videos grandes se usa en cambio createUploadedVideoRequest,
+// porque los Server Actions tienen límite de tamaño de body.
 export async function uploadPhoto(
   _state: UploadPhotoState,
   formData: FormData
 ): Promise<UploadPhotoState> {
-  const session = await verifySession();
+  const session = await verifySession(); // tiene que haber alguien logueado
 
   const file = formData.get("foto");
   const description = (formData.get("descripcion") as string | null)?.trim() || null;
@@ -62,13 +76,15 @@ export async function uploadPhoto(
     // Recodificar a JPEG y limitar el ancho estira mucho el 1GB gratis de
     // Blob frente a fotos de celular sin comprimir (varios MB cada una).
     body = await sharp(Buffer.from(await file.arrayBuffer()))
-      .rotate()
+      .rotate() // corrige la orientación EXIF (fotos de celular "acostadas")
       .resize({ width: OPTIMIZED_MAX_WIDTH, withoutEnlargement: true })
       .jpeg({ quality: OPTIMIZED_JPEG_QUALITY })
       .toBuffer();
     contentType = "image/jpeg";
   }
 
+  // `put` sube el archivo a Vercel Blob y devuelve su URL pública. Toda foto
+  // nueva arranca en la carpeta "pending/" hasta que el admin la revise.
   const blob = await put(
     `${statusFolder("PENDING")}/${photoId}.${extensionFor(contentType)}`,
     body,
@@ -87,7 +103,7 @@ export async function uploadPhoto(
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/"); // para que la galería/lista de pendientes se actualice
   return { success: true };
 }
 
@@ -101,6 +117,10 @@ export async function createUploadedVideoRequest(input: {
 }) {
   const session = await verifySession();
 
+  // El navegador es quien decide el nombre del archivo al subirlo
+  // directamente a Blob (ver app/api/upload/route.ts), así que acá se
+  // revalida que la URL tenga la forma esperada (carpeta "pending/" + el
+  // mismo photoId) antes de confiar en ella y guardarla en la BD.
   if (!input.fileUrl.includes(`pending/${input.photoId}.`)) {
     throw new Error("URL de archivo inválida");
   }
@@ -120,6 +140,9 @@ export async function createUploadedVideoRequest(input: {
   revalidatePath("/");
 }
 
+// El admin aprueba o rechaza una foto/video pendiente: mueve el archivo de
+// carpeta en Blob ("pending/" -> "approved/" o "rejected/") y actualiza el
+// estado en la BD.
 export async function reviewPhoto(formData: FormData) {
   await requireAdmin();
 
@@ -129,11 +152,14 @@ export async function reviewPhoto(formData: FormData) {
 
   const photo = await db.photoRequest.findUnique({ where: { id } });
   if (!photo || photo.status !== "PENDING") {
+    // Ya fue revisada (o no existe): no hacemos nada, evita doble-procesar
+    // si el admin hace doble clic o recarga.
     return;
   }
 
   const extension = photo.fileUrl.split(".").pop();
   const newPathname = `${statusFolder(decision)}/${photo.id}.${extension}`;
+  // Blob no tiene "mover"; se copia al nuevo path y se borra el original.
   const moved = await copy(photo.fileUrl, newPathname, { access: "public" });
   await del(photo.fileUrl);
 
@@ -150,6 +176,9 @@ export async function reviewPhoto(formData: FormData) {
   revalidatePath("/");
 }
 
+// Marca la asistencia de un invitado desde su propia página de invitación
+// (app/invitacion/[token]/page.tsx), cuando el admin confirma "a mano" en
+// persona en vez de escanear el QR.
 export async function checkInGuest(formData: FormData) {
   await requireAdmin();
   const qrToken = formData.get("qrToken") as string;
@@ -168,6 +197,10 @@ export async function checkInGuest(formData: FormData) {
   redirect(`/admin/invitados?ok=${user.id}`);
 }
 
+// Resultado del check-in por QR: QrScanner.tsx usa esto para mostrar un
+// mensaje distinto según si funcionó, ya estaba marcado, o el código no
+// corresponde a nadie (sin redirigir, porque el escáner se queda en la
+// misma pantalla escaneando el siguiente invitado).
 export type CheckInResult =
   | { status: "ok"; name: string }
   | { status: "already"; name: string }

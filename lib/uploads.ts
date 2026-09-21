@@ -1,3 +1,8 @@
+// Constantes y helpers compartidos por todo el flujo de subida de fotos/
+// videos. `app/actions/photos.ts` (subida de fotos vía Server Action) y
+// `app/api/upload/route.ts` (subida de videos vía @vercel/blob/client) los
+// usan para validar el tipo/tamaño del archivo y decidir nombres de
+// carpeta/extensión en Vercel Blob.
 import "server-only";
 
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -15,6 +20,9 @@ export function isVideo(mime: string) {
   return ALLOWED_VIDEO_TYPES.includes(mime);
 }
 
+// Extensión de archivo a usar en el nombre del blob según el mime type.
+// Las fotos casi siempre caen en "jpg" porque photos.ts las recomprime a JPEG
+// antes de llamar a esta función (ver ALLOWED_IMAGE_TYPES arriba).
 export function extensionFor(mime: string) {
   if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
@@ -24,6 +32,9 @@ export function extensionFor(mime: string) {
   return "jpg";
 }
 
+// Carpeta dentro del bucket de Blob según el estado de moderación, para
+// poder mover el archivo de "pending/" a "approved/" o "rejected/" cuando el
+// admin revisa la foto (ver reviewPhoto en app/actions/photos.ts).
 export function statusFolder(status: "PENDING" | "APPROVED" | "REJECTED") {
   return status === "PENDING"
     ? "pending"

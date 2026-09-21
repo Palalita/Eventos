@@ -1,14 +1,32 @@
+// La página "/" es EL sitio: no hay rutas separadas para admin y para
+// invitado. Home() decide qué renderizar según el rol de quien está logueado
+// (verifySession(), en lib/dal.ts, ya se encarga de mandar a /login a quien
+// no tenga sesión). Es un Server Component async: todo lo que ves acá arriba
+// (await db..., await getEventSettings()...) corre en el servidor antes de
+// mandar el HTML ya armado al navegador — por eso no hace falta un
+// "loading spinner" para estos datos.
+//
+// Mapa del archivo:
+//   Home()            -> arma el header y elige la rama admin o invitado
+//   AdminHome()        -> estadísticas + listas de fotos pendientes (admin)
+//   GuestHero()         -> la "portada" animada que ve el invitado al entrar
+//   GuestHome()         -> secciones activables + barra flotante (QR/subir)
+//   MediaGallery()      -> el collage de fotos/videos aprobados
+//   MisEnvios()         -> "mis envíos en trámite" de un invitado puntual
 import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { verifySession } from "@/lib/dal";
 import { getEventSettings, getSectionFlags } from "@/lib/settings";
 import { logout } from "@/app/actions/auth";
-import { reviewPhoto } from "@/app/actions/photos";
-import Countdown from "./Countdown";
-import UploadForm from "./UploadForm";
-import ModalButton from "./ModalButton";
-import MediaPreview from "./MediaPreview";
+import Countdown from "./components/Countdown";
+import UploadForm from "./components/UploadForm";
+import ModalButton from "./components/ModalButton";
+import MediaPreview from "./components/MediaPreview";
+import Reveal from "./components/Reveal";
+import ScrollHint from "./components/ScrollHint";
+import HeroPhoto from "./components/HeroPhoto";
+import PendingList from "./components/PendingList";
 
 type EventSettings = Awaited<ReturnType<typeof getEventSettings>>;
 type SectionFlags = Awaited<ReturnType<typeof getSectionFlags>>;
@@ -20,18 +38,20 @@ const estadoLabel: Record<string, string> = {
   REJECTED: "Rechazada",
 };
 
+const fechaEventoFormatter = new Intl.DateTimeFormat("es-GT", {
+  dateStyle: "full",
+  timeStyle: "short",
+});
+
 export default async function Home() {
-  const session = await verifySession();
+  const session = await verifySession(); // redirige a /login si no hay sesión
   const [user, settings, flags] = await Promise.all([
     db.user.findUniqueOrThrow({ where: { id: session.userId } }),
     getEventSettings(),
     getSectionFlags(),
   ]);
 
-  const fechaFormateada = new Intl.DateTimeFormat("es-GT", {
-    dateStyle: "full",
-    timeStyle: "short",
-  }).format(settings.fechaEvento);
+  const fechaFormateada = fechaEventoFormatter.format(settings.fechaEvento);
 
   return (
     <main style={user.role === "GUEST" ? { paddingBottom: "5rem" } : undefined}>
@@ -45,6 +65,9 @@ export default async function Home() {
         <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
           {user.role === "ADMIN" && (
             <>
+              <Link href="/admin/invitaciones" className="btn btn-secondary">
+                Invitaciones
+              </Link>
               <Link href="/admin/invitados" className="btn btn-secondary">
                 Invitados
               </Link>
@@ -67,26 +90,31 @@ export default async function Home() {
         </div>
       </header>
 
-      <section className="hero" style={{ minHeight: "auto", padding: "1.5rem" }}>
-        <p className="hero-date">
-          {fechaFormateada} · {settings.lugar}
-        </p>
-        <Countdown target={settings.fechaEvento.toISOString()} />
-      </section>
-
       {user.role === "ADMIN" ? (
         <>
+          <section className="hero" style={{ minHeight: "auto", padding: "1.5rem" }}>
+            <p className="hero-date">
+              {fechaFormateada} · {settings.lugar}
+            </p>
+            <Countdown target={settings.fechaEvento.toISOString()} />
+          </section>
           <AdminHome />
           <MediaGallery phase="PRE_EVENT" title="Fotos y videos preevento" />
           <MediaGallery phase="EVENT" title="Fotos y videos del evento" />
         </>
       ) : (
-        <GuestHome settings={settings} flags={flags} qrToken={user.qrToken} attended={user.attended} userId={user.id} />
+        <>
+          <GuestHero settings={settings} fechaFormateada={fechaFormateada} />
+          <GuestHome settings={settings} flags={flags} qrToken={user.qrToken} attended={user.attended} userId={user.id} />
+        </>
       )}
     </main>
   );
 }
 
+// Panel que ve el admin debajo del header: contador de pendientes/aprobadas/
+// asistencia, y las dos listas de moderación (PendingList hace el trabajo
+// pesado de aprobar/rechazar, ver app/PendingList.tsx).
 async function AdminHome() {
   const [pendientesPre, pendientesEvento, totalAprobadas, totalInvitados, totalAsistieron] =
     await Promise.all([
@@ -130,56 +158,66 @@ async function AdminHome() {
   );
 }
 
-function PendingList({
-  title,
-  items,
+// La "portada" que ve un invitado (GUEST) al entrar: foto tipo polaroid,
+// nombre en script, contador y la flechita de scroll. Cada bloque está
+// envuelto en <Reveal> para que aparezca con una animación al hacer scroll
+// (o de entrada, ya que están arriba de todo) — ver app/Reveal.tsx.
+function GuestHero({
+  settings,
+  fechaFormateada,
 }: {
-  title: string;
-  items: {
-    id: string;
-    mediaType: "PHOTO" | "VIDEO";
-    description: string | null;
-    user: { name: string; email: string };
-  }[];
+  settings: EventSettings;
+  fechaFormateada: string;
 }) {
+  // ?v=timestamp para invalidar la caché del navegador/CDN cuando el admin
+  // sube una foto principal nueva (mismo nombre de archivo en Blob, ver
+  // updateEventSettings en app/actions/settings.ts).
+  const fotoSrc = settings.fotoPrincipalUrl
+    ? `${settings.fotoPrincipalUrl}?v=${settings.updatedAt.getTime()}`
+    : null;
+
   return (
-    <section className="card">
-      <h2>{title}</h2>
-      {items.length === 0 && <p>No hay solicitudes pendientes.</p>}
-      <ul className="review-list">
-        {items.map((foto) => (
-          <li key={foto.id} className="review-item">
-            <MediaPreview
-              src={`/api/fotos/${foto.id}`}
-              mediaType={foto.mediaType}
-              alt={foto.description ?? "Foto del evento"}
-              className="thumb-media thumb-media--lg"
-            />
-            <div className="review-details">
-              <p>
-                <strong>{foto.user.name}</strong> ({foto.user.email})
-              </p>
-              {foto.description && <p>{foto.description}</p>}
-              <form action={reviewPhoto} className="review-actions">
-                <input type="hidden" name="id" value={foto.id} />
-                <input type="text" name="comentario" placeholder="Comentario (opcional)" />
-                <div className="review-buttons">
-                  <button type="submit" name="decision" value="APPROVED" className="btn btn-primary">
-                    Aprobar
-                  </button>
-                  <button type="submit" name="decision" value="REJECTED" className="btn btn-danger">
-                    Rechazar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </li>
-        ))}
-      </ul>
+    <section className="guest-hero">
+      <span className="hero-bloom hero-bloom--tl" aria-hidden="true" />
+      <span className="hero-bloom hero-bloom--tr" aria-hidden="true" />
+      <span className="hero-bloom hero-bloom--bl" aria-hidden="true" />
+      <span className="hero-bloom hero-bloom--br" aria-hidden="true" />
+
+      <p className="hero-eyebrow-italic">{settings.lema}</p>
+
+      <Reveal>
+        <div className="hero-polaroid">
+          {fotoSrc ? (
+            <HeroPhoto src={fotoSrc} alt={settings.quinceaneraNombre} />
+          ) : (
+            <div className="hero-polaroid-placeholder">Mis XV años</div>
+          )}
+          <span className="hero-seal">XV</span>
+        </div>
+      </Reveal>
+
+      <Reveal delay={150}>
+        <div className="hero-name-wrap">
+          <h1 className="hero-name-script">{settings.quinceaneraNombre}</h1>
+          <p className="hero-date">
+            {fechaFormateada} · {settings.lugar}
+          </p>
+        </div>
+      </Reveal>
+
+      <Reveal delay={300}>
+        <Countdown target={settings.fechaEvento.toISOString()} />
+      </Reveal>
+
+      <ScrollHint />
     </section>
   );
 }
 
+// El resto de la página para un invitado: las secciones que el admin puede
+// activar/desactivar desde app/admin/paginas (`flags`, ver lib/site-sections.ts
+// y lib/settings.ts), más la barra flotante fija abajo con accesos rápidos
+// al QR propio y a subir fotos/videos (cada uno dentro de un ModalButton).
 function GuestHome({
   settings,
   flags,
@@ -247,24 +285,35 @@ function GuestHome({
 
 function InvitacionSection({ settings }: { settings: EventSettings }) {
   return (
-    <section className="content-section">
-      <h2>Invitación e Indicaciones</h2>
-      <p>{settings.lugar}</p>
-      {settings.indicaciones && <p>{settings.indicaciones}</p>}
-    </section>
+    <Reveal>
+      <section className="content-section">
+        <h2>Invitación e Indicaciones</h2>
+        <p>{settings.lugar}</p>
+        {settings.indicaciones && <p>{settings.indicaciones}</p>}
+      </section>
+    </Reveal>
   );
 }
 
 function SaveTheDateSection({ settings }: { settings: EventSettings }) {
   if (!settings.saveTheDateMensaje) return null;
   return (
-    <section className="content-section">
-      <h2>Save the Date</h2>
-      <p>{settings.saveTheDateMensaje}</p>
-    </section>
+    <Reveal>
+      <section className="content-section">
+        <h2>Save the Date</h2>
+        <p>{settings.saveTheDateMensaje}</p>
+      </section>
+    </Reveal>
   );
 }
 
+// El collage público de fotos/videos ya aprobados por el admin. Se usa tanto
+// para el admin (mostrando ambas fases siempre) como para el invitado (solo
+// si la sección correspondiente está activada en `flags`). Nótese que acá
+// `src` es item.fileUrl directo (la URL pública de Blob) — a diferencia de
+// MisEnvios() más abajo, que usa la ruta protegida /api/fotos/[id], porque
+// una foto ya APPROVED es pública por definición y no necesita chequeo de
+// permisos.
 async function MediaGallery({ phase, title }: { phase: Phase; title: string }) {
   const items = await db.photoRequest.findMany({
     where: { status: "APPROVED", phase },
@@ -273,7 +322,7 @@ async function MediaGallery({ phase, title }: { phase: Phase; title: string }) {
   });
 
   return (
-    <section className="gallery-section">
+    <Reveal className="gallery-section">
       <h2>{title}</h2>
       {items.length === 0 ? (
         <p className="gallery-empty">
@@ -293,10 +342,14 @@ async function MediaGallery({ phase, title }: { phase: Phase; title: string }) {
           ))}
         </div>
       )}
-    </section>
+    </Reveal>
   );
 }
 
+// Lista privada de "tus fotos/videos que todavía no se aprobaron" (o que se
+// rechazaron), dentro del modal de subida de cada invitado. Usa /api/fotos/[id]
+// como src porque estas fotos NO son públicas todavía — esa ruta verifica
+// que quien pide la imagen sea su dueño (ver app/api/fotos/[id]/route.ts).
 async function MisEnvios({ phase, userId }: { phase: Phase; userId: string }) {
   const items = await db.photoRequest.findMany({
     where: { userId, phase, status: { not: "APPROVED" } },

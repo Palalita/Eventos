@@ -1,3 +1,22 @@
+// Esquema de la base de datos (Postgres en Neon), leído por Prisma para
+// generar el cliente tipado que importa lib/db.ts (`import { db } from
+// "@/lib/db"`) y que usa el resto del código para consultar/escribir.
+// Cualquier cambio acá requiere una migración (`npx prisma migrate dev`) —
+// las migraciones ya aplicadas están en prisma/migrations/.
+//
+// Cómo se relacionan los modelos:
+//   User               — cada persona (admin o invitado). El invitado nace
+//                         al usar un código de Invitation (ver signup() en
+//                         app/actions/auth.ts).
+//   PhotoRequest       — una foto/video subido por un User; pasa por
+//                         PENDING -> APPROVED/REJECTED (ver reviewPhoto()).
+//   TrustedDevice /
+//   DeviceVerification — el flujo de "confirmar dispositivo nuevo por
+//                         correo" para los admins (ver lib/device.ts).
+//   Invitation         — códigos de invitación que el admin genera y manda
+//                         por correo antes de que exista el User.
+//   SiteSection        — qué bloques de la home están activados/desactivados.
+//   EventSettings      — una única fila con los datos generales del evento.
 generator client {
   provider = "prisma-client-js"
 }
@@ -28,6 +47,11 @@ enum EventPhase {
 enum MediaType {
   PHOTO
   VIDEO
+}
+
+enum InvitationStatus {
+  PENDING
+  USED
 }
 
 model User {
@@ -87,6 +111,18 @@ model DeviceVerification {
   createdAt   DateTime @default(now())
 }
 
+// Correo + código que el admin registra de antemano. El invitado necesita
+// este código (enviado por correo) para poder crear su cuenta; así solo
+// quien fue invitado puede entrar al sitio.
+model Invitation {
+  id        String           @id @default(cuid())
+  email     String           @unique
+  code      String           @unique
+  status    InvitationStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  usedAt    DateTime?
+}
+
 // Activar/desactivar secciones del sitio para los invitados.
 model SiteSection {
   key     String  @id
@@ -103,5 +139,6 @@ model EventSettings {
   lema              String
   indicaciones      String   @default("")
   saveTheDateMensaje String  @default("")
+  fotoPrincipalUrl  String   @default("")
   updatedAt         DateTime @updatedAt
 }

@@ -1,3 +1,14 @@
+// Server Actions de autenticación: signup, login, logout y la confirmación
+// de dispositivo. Una "Server Action" (la directiva "use server" de arriba)
+// es una función que vive en el servidor pero un componente de cliente puede
+// llamar como si fuera una función normal — Next.js genera por detrás una
+// petición HTTP (un POST) hacia esta función.
+//
+// Quién las llama:
+// - signup ← app/registro/SignupForm.tsx (vía useActionState)
+// - login ← app/login/LoginForm.tsx (vía useActionState)
+// - logout ← el botón de cerrar sesión en app/page.tsx
+// - confirmDeviceVerification ← el <form action={...}> de app/verificar-dispositivo/page.tsx
 "use server";
 
 import bcrypt from "bcryptjs";
@@ -16,34 +27,69 @@ import {
 
 const DEVICE_VERIFICATION_MINUTES = 15;
 
+// Crea la cuenta de un invitado. Requiere un código de invitación válido
+// (creado antes por un admin en app/actions/invitations.ts) que coincida con
+// el correo al que se le mandó.
 export async function signup(_state: SignupFormState, formData: FormData) {
+  // Zod valida forma y tamaño mínimo de cada campo; si falla, se devuelven
+  // los errores por campo y SignupForm.tsx los muestra sin recargar la página.
   const validatedFields = SignupFormSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    code: formData.get("code"),
   });
 
   if (!validatedFields.success) {
     return { errors: validatedFields.error.flatten().fieldErrors };
   }
 
-  const { name, email, password } = validatedFields.data;
+  const { name, email, password, code } = validatedFields.data;
+
+  // El código tiene que existir, seguir sin usarse (PENDING) y ser el que se
+  // mandó justo a este correo — así una persona no puede registrarse con el
+  // código de otra.
+  const invitation = await db.invitation.findUnique({
+    where: { code: code.toUpperCase() },
+  });
+  if (
+    !invitation ||
+    invitation.status !== "PENDING" ||
+    invitation.email.toLowerCase() !== email.toLowerCase()
+  ) {
+    return {
+      message: "Ese código no es válido para este correo. Revisa el correo de invitación.",
+    };
+  }
 
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) {
     return { message: "Ya existe una cuenta con ese correo." };
   }
 
+  // bcrypt.hash hashea la contraseña (nunca se guarda en texto plano); el
+  // "10" es el costo del hash (más alto = más lento de calcular = más
+  // resistente a fuerza bruta si la BD se filtra).
   const passwordHash = await bcrypt.hash(password, 10);
 
   const user = await db.user.create({
     data: { name, email, passwordHash, role: "GUEST" },
   });
 
+  // Se marca el código como usado para que nadie más pueda registrarse con él.
+  await db.invitation.update({
+    where: { id: invitation.id },
+    data: { status: "USED", usedAt: new Date() },
+  });
+
   await createSession({ userId: user.id, role: user.role });
   redirect("/");
 }
 
+// Valida email + contraseña. Si el usuario es ADMIN y el navegador no es uno
+// ya confiable, en vez de loguear manda un correo de verificación y corta
+// acá (ver confirmDeviceVerification más abajo, que es la que realmente abre
+// la sesión en ese caso).
 export async function login(_state: LoginFormState, formData: FormData) {
   const validatedFields = LoginFormSchema.safeParse({
     email: formData.get("email"),
@@ -58,6 +104,8 @@ export async function login(_state: LoginFormState, formData: FormData) {
 
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {
+    // Mensaje genérico a propósito: no decimos "el correo no existe" para no
+    // ayudar a alguien a adivinar qué correos están registrados.
     return { message: "Correo o contraseña incorrectos." };
   }
 
@@ -73,6 +121,8 @@ export async function login(_state: LoginFormState, formData: FormData) {
     });
 
     if (!trusted || trusted.userId !== user.id) {
+      // Dispositivo nuevo: se crea un token de un solo uso (expira en 15
+      // minutos) y se manda por correo en vez de loguear directo.
       const verificationToken = randomUUID();
       await db.deviceVerification.create({
         data: {
@@ -93,9 +143,12 @@ export async function login(_state: LoginFormState, formData: FormData) {
       // navegador, al confirmarlo quedará marcado como confiable.
       await setDeviceCookie(deviceToken);
 
+      // LoginForm.tsx detecta este flag y muestra "revisá tu correo" en vez
+      // de intentar redirigir (todavía no hay sesión creada).
       return { pendingDeviceVerification: true };
     }
 
+    // Dispositivo ya confiable: solo se actualiza la fecha de último uso.
     await db.trustedDevice.update({
       where: { id: trusted.id },
       data: { lastSeenAt: new Date() },
@@ -109,4 +162,54 @@ export async function login(_state: LoginFormState, formData: FormData) {
 export async function logout() {
   await deleteSession();
   redirect("/login");
+}
+
+// Confirma el dispositivo y abre la sesión. A propósito solo se dispara con
+// un POST explícito del botón en /verificar-dispositivo (no en el GET que
+// abre esa página): un GET puede visitarse solo -prefetch del navegador,
+// escáneres de seguridad de correo-, y eso quemaría el token o abriría la
+// sesión sin que el admin haga nada.
+//
+// No requiere sesión previa (es justamente la acción que la crea): la
+// autorización acá es "conocer el token", que es aleatorio, de un solo uso
+// y expira en 15 minutos — el mismo modelo de seguridad que un link de
+// "restablecer contraseña".
+export async function confirmDeviceVerification(formData: FormData) {
+  const token = formData.get("token");
+  if (typeof token !== "string" || !token) {
+    redirect("/login?device=invalido");
+  }
+
+  const verification = await db.deviceVerification.findUnique({
+    where: { tokenHash: hashToken(token) },
+  });
+
+  if (!verification || verification.expiresAt < new Date()) {
+    redirect("/login?device=expirado");
+  }
+
+  const user = await db.user.findUnique({ where: { id: verification.userId } });
+  if (!user) {
+    redirect("/login?device=invalido");
+  }
+
+  // upsert: si por algún motivo ese dispositivo ya estaba guardado, solo
+  // actualiza "último uso"; si no, lo crea como confiable.
+  await db.trustedDevice.upsert({
+    where: { tokenHash: hashToken(verification.deviceToken) },
+    update: { lastSeenAt: new Date() },
+    create: {
+      userId: user.id,
+      tokenHash: hashToken(verification.deviceToken),
+      label: "Confirmado por correo",
+    },
+  });
+  // Se borra el token de verificación: no se puede volver a usar el mismo
+  // link (protege contra que alguien lo reenvíe o lo reutilice después).
+  await db.deviceVerification.delete({ where: { id: verification.id } });
+
+  await setDeviceCookie(verification.deviceToken);
+  await createSession({ userId: user.id, role: user.role });
+
+  redirect("/");
 }

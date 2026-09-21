@@ -1,8 +1,21 @@
+// Página pública de la invitación de UN invitado puntual (identificado por
+// su `qrToken`, un id aleatorio distinto del id de la BD — ver el modelo
+// User en prisma/schema.prisma). Es la URL que codifica el QR
+// (app/api/qr/[token]/route.ts) y a la que llega el admin al escanearlo o
+// buscar manualmente en app/admin/invitados/QrScanner.tsx. Según quién la
+// mire ve cosas distintas: el propio invitado ve su QR, el admin ve un botón
+// para confirmar asistencia a mano.
 import Image from "next/image";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { getEventSettings } from "@/lib/settings";
 import { checkInGuest } from "@/app/actions/photos";
+
+const fechaEventoFormatter = new Intl.DateTimeFormat("es-GT", {
+  dateStyle: "full",
+  timeStyle: "short",
+});
+const horaCheckInFormatter = new Intl.DateTimeFormat("es-GT", { timeStyle: "short" });
 
 export default async function InvitacionPage({
   params,
@@ -14,10 +27,7 @@ export default async function InvitacionPage({
     db.user.findUnique({ where: { qrToken: token } }),
     getEventSettings(),
   ]);
-  const fechaFormateada = new Intl.DateTimeFormat("es-GT", {
-    dateStyle: "full",
-    timeStyle: "short",
-  }).format(settings.fechaEvento);
+  const fechaFormateada = fechaEventoFormatter.format(settings.fechaEvento);
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
   const isOwner = session?.userId === user?.id;
@@ -49,7 +59,7 @@ export default async function InvitacionPage({
           <p className="invite-status invite-status--ok">
             ✓ Asistencia confirmada
             {user.checkedInAt &&
-              ` · ${new Intl.DateTimeFormat("es-GT", { timeStyle: "short" }).format(user.checkedInAt)}`}
+              ` · ${horaCheckInFormatter.format(user.checkedInAt)}`}
           </p>
         ) : (
           <p className="invite-status">Aún no ha registrado su llegada</p>

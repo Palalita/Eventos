@@ -1,8 +1,15 @@
+// Página de admin para editar los datos generales del evento (nombre, fecha,
+// lugar, foto principal, indicaciones, mensaje de Save the Date). El
+// <SaveForm> hace el submit contra la Server Action updateEventSettings.
 import Link from "next/link";
 import { requireAdmin } from "@/lib/dal";
 import { getEventSettings } from "@/lib/settings";
 import { updateEventSettings } from "@/app/actions/settings";
+import SaveForm from "@/app/components/SaveForm";
 
+// El input HTML <input type="datetime-local"> necesita el valor en formato
+// "YYYY-MM-DDTHH:mm" en hora LOCAL (sin zona horaria); esto convierte la
+// fecha guardada en la BD (en UTC) a esa forma para precargar el campo.
 function toDatetimeLocalValue(date: Date) {
   const offset = date.getTimezoneOffset();
   const local = new Date(date.getTime() - offset * 60 * 1000);
@@ -24,7 +31,7 @@ export default async function ContenidoPage() {
 
       <section className="card">
         <h2>Editar contenido del evento</h2>
-        <form action={updateEventSettings} className="settings-form">
+        <SaveForm action={updateEventSettings} className="settings-form">
           <label htmlFor="quinceaneraNombre">Nombre de la quinceañera</label>
           <input
             id="quinceaneraNombre"
@@ -35,6 +42,16 @@ export default async function ContenidoPage() {
 
           <label htmlFor="lema">Lema del sitio</label>
           <input id="lema" name="lema" defaultValue={settings.lema} required />
+
+          <label htmlFor="fotoPrincipal">Foto principal (portada de la invitación)</label>
+          {settings.fotoPrincipalUrl && (
+            <img
+              src={settings.fotoPrincipalUrl}
+              alt="Foto principal actual"
+              style={{ width: "160px", borderRadius: "8px", marginBottom: "0.5rem" }}
+            />
+          )}
+          <input id="fotoPrincipal" name="fotoPrincipal" type="file" accept="image/*" />
 
           <label htmlFor="fechaEvento">Fecha y hora del evento</label>
           <input
@@ -65,7 +82,7 @@ export default async function ContenidoPage() {
           <button type="submit" className="btn btn-primary" style={{ marginTop: "1.2rem" }}>
             Guardar cambios
           </button>
-        </form>
+        </SaveForm>
       </section>
     </main>
   );

@@ -1,3 +1,6 @@
+// Route Handler (no una página): responde a GET /api/fotos/[id]. Es la URL
+// que usa <img>/<video> en app/MediaPreview.tsx en vez del fileUrl de Blob
+// directo — así se puede chequear permisos antes de mostrar la imagen real.
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
@@ -26,5 +29,7 @@ export async function GET(
     }
   }
 
+  // Ya autorizado: se redirige al navegador directo a la URL real de Blob
+  // (así no cargamos nosotros el peso de la imagen, solo la puerta de acceso).
   return NextResponse.redirect(photo.fileUrl);
 }
