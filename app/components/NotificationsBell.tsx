@@ -61,23 +61,26 @@ export default function NotificationsBell({ items }: { items: NotificationItem[]
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
+  // Al abrir, se marcan todas como vistas. Separado de toggle() a propósito:
+  // el updater de setOpen tiene que ser puro (React puede llamarlo más de
+  // una vez), así que el efecto secundario (localStorage + setSeenIds) va
+  // acá, disparado por el cambio de `open`, no adentro del updater.
+  useEffect(() => {
+    if (!open) return;
+    const allIds = items.map((item) => item.id);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allIds));
+    } catch {
+      // Ver comentario de readSeenIds: si falla, el badge no se limpia,
+      // pero no afecta ver la lista de notificaciones.
+    }
+    setSeenIds(new Set(allIds));
+  }, [open, items]);
+
   const unreadCount = items.filter((item) => !seenIds.has(item.id)).length;
 
   function toggle() {
-    setOpen((prev) => {
-      const next = !prev;
-      if (next) {
-        const allIds = items.map((item) => item.id);
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(allIds));
-        } catch {
-          // Ver comentario de readSeenIds: si falla, el badge no se limpia,
-          // pero no afecta ver la lista de notificaciones.
-        }
-        setSeenIds(new Set(allIds));
-      }
-      return next;
-    });
+    setOpen((prev) => !prev);
   }
 
   return (
