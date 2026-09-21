@@ -179,10 +179,16 @@ export async function sendInvitationEmail(
       // código queda en su propio renglón centrado (no flotando al lado de
       // "subir las tuyas") y el tamaño de letra no varía entre clientes de
       // correo, que es justo lo que pasaba antes.
+      //
+      // Fuente monoespaciada a propósito (no Georgia): Georgia dibuja los
+      // números con altura "old-style" (más chicos y desalineados respecto
+      // a las mayúsculas), así que "AB12CD" se veía con números más chicos
+      // que las letras. Una monoespaciada garantiza el mismo tamaño para
+      // todos los caracteres en cualquier cliente de correo.
       extraBlockHtml: `
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto; background:${ROSE_LIGHT}; border:1px solid ${ROSE}; border-radius:12px;">
           <tr>
-            <td style="padding:12px 28px; font-family: Georgia, 'Times New Roman', serif; font-size:28px; line-height:28px; font-weight:bold; letter-spacing:6px; color:${ROSE_DARK}; white-space:nowrap; -webkit-text-size-adjust:100%; text-size-adjust:100%; mso-line-height-rule:exactly;">
+            <td style="padding:12px 28px; font-family:'Courier New', Courier, monospace; font-size:28px; line-height:28px; font-weight:bold; letter-spacing:6px; color:${ROSE_DARK}; white-space:nowrap; -webkit-text-size-adjust:100%; text-size-adjust:100%; mso-line-height-rule:exactly;">
               ${code}
             </td>
           </tr>
