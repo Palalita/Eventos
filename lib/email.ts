@@ -6,6 +6,92 @@
 import "server-only";
 import { Resend } from "resend";
 
+// Paleta y tipografías del sitio (ver app/globals.css :root). Los clientes
+// de correo no cargan Google Fonts ni @import, así que se usan equivalentes
+// "web-safe" (Georgia como serif, system-ui como sans) en vez de las fuentes
+// reales — el layout de tabla es a propósito, es lo único que Outlook
+// desktop renderiza de forma predecible.
+const ROSE = "#d86c7d";
+const ROSE_DARK = "#8d2536";
+const ROSE_LIGHT = "#f5cbd5";
+const GOLD = "#bda672";
+const CREAM = "#fff8f5";
+const TEXT = "#212529";
+
+function renderEmailLayout({
+  heading,
+  bodyHtml,
+  ctaLabel,
+  ctaUrl,
+  footerNote,
+}: {
+  heading: string;
+  bodyHtml: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  footerNote: string;
+}) {
+  const ctaBlock =
+    ctaLabel && ctaUrl
+      ? `
+        <tr>
+          <td align="center" style="padding: 8px 0 4px;">
+            <a href="${ctaUrl}" style="display:inline-block; background:${ROSE}; color:#ffffff; font-family:Georgia,'Times New Roman',serif; font-size:16px; font-weight:bold; text-decoration:none; padding:12px 32px; border-radius:999px;">
+              ${ctaLabel}
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding: 10px 24px 0; font-family: system-ui, -apple-system, sans-serif; font-size:12px; color:${TEXT}; opacity:0.65; word-break:break-all;">
+            O copiá y pegá este enlace en tu navegador:<br />
+            <a href="${ctaUrl}" style="color:${ROSE_DARK};">${ctaUrl}</a>
+          </td>
+        </tr>
+      `
+      : "";
+
+  return `
+    <div style="background:${CREAM}; padding:32px 16px; font-family: system-ui, -apple-system, sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; margin:0 auto;">
+        <tr>
+          <td align="center" style="padding-bottom:20px;">
+            <span style="font-family: Georgia, 'Times New Roman', serif; font-style:italic; color:${GOLD}; font-size:15px; letter-spacing:0.5px;">
+              Mis XV años
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#ffffff; border:1px solid ${ROSE_LIGHT}; border-radius:20px; padding:32px 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="padding-bottom:18px;">
+                  <div style="display:inline-block; width:40px; height:3px; background:${GOLD}; border-radius:999px;"></div>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="font-family: Georgia, 'Times New Roman', serif; color:${ROSE_DARK}; font-size:24px; font-weight:bold; padding-bottom:14px;">
+                  ${heading}
+                </td>
+              </tr>
+              <tr>
+                <td style="font-family: system-ui, -apple-system, sans-serif; color:${TEXT}; font-size:15px; line-height:1.6; text-align:center;">
+                  ${bodyHtml}
+                </td>
+              </tr>
+              ${ctaBlock}
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding-top:20px; font-family: system-ui, -apple-system, sans-serif; font-size:12px; color:${TEXT}; opacity:0.55;">
+            ${footerNote}
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+}
+
 // Sin RESEND_API_KEY configurada, no bloqueamos el flujo: dejamos el enlace
 // en el log del servidor para poder seguir probando en desarrollo.
 export async function sendDeviceVerificationEmail(to: string, verifyUrl: string) {
@@ -22,11 +108,16 @@ export async function sendDeviceVerificationEmail(to: string, verifyUrl: string)
     from: "Mis XV años <onboarding@resend.dev>",
     to,
     subject: "Confirma este dispositivo para iniciar sesión",
-    html: `
-      <p>Detectamos un inicio de sesión de administrador desde un dispositivo que no reconocemos.</p>
-      <p><a href="${verifyUrl}">Confirmar que soy yo e iniciar sesión</a></p>
-      <p>Este enlace expira en 15 minutos. Si no fuiste tú, ignora este correo.</p>
-    `,
+    html: renderEmailLayout({
+      heading: "Nuevo dispositivo detectado",
+      bodyHtml: `
+        Detectamos un inicio de sesión de administrador desde un dispositivo que no reconocemos.
+        Si fuiste vos, confirmalo para entrar; si no, ignorá este correo y tu cuenta seguirá segura.
+      `,
+      ctaLabel: "Confirmar e iniciar sesión",
+      ctaUrl: verifyUrl,
+      footerNote: "Este enlace expira en 15 minutos por tu seguridad.",
+    }),
   });
   // Resend no lanza excepción si el envío es rechazado (p. ej. el dominio
   // de prueba onboarding@resend.dev solo puede mandar al correo dueño de la
@@ -60,12 +151,21 @@ export async function sendInvitationEmail(
     from: "Mis XV años <onboarding@resend.dev>",
     to,
     subject: `¡Estás invitado a mis XV años, ${quinceaneraNombre}!`,
-    html: `
-      <p>¡Felicidades! Fuiste invitado a celebrar los XV años de ${quinceaneraNombre}.</p>
-      <p>Tu código de invitación es:</p>
-      <p style="font-size:28px; font-weight:bold; letter-spacing:4px;">${code}</p>
-      <p>Ingresa a <a href="${registroUrl}">${registroUrl}</a> y usa este código para crear tu cuenta, ver las fotos del evento y subir las tuyas.</p>
-    `,
+    html: renderEmailLayout({
+      heading: `¡Estás invitado${quinceaneraNombre ? `, celebrá con ${quinceaneraNombre}` : ""}!`,
+      bodyHtml: `
+        Fuiste invitado a celebrar los XV años de ${quinceaneraNombre}. Con tu código
+        vas a poder registrarte, ver las fotos del evento y subir las tuyas.
+        <div style="margin:20px auto 4px; display:inline-block; background:${ROSE_LIGHT}; border:1px solid ${ROSE}; border-radius:12px; padding:12px 28px;">
+          <span style="font-family: Georgia, 'Times New Roman', serif; font-size:28px; font-weight:bold; letter-spacing:6px; color:${ROSE_DARK};">
+            ${code}
+          </span>
+        </div>
+      `,
+      ctaLabel: "Crear mi cuenta",
+      ctaUrl: registroUrl,
+      footerNote: "Usá el código de arriba al registrarte con este mismo correo.",
+    }),
   });
   if (error) {
     console.error(`[email] Resend rechazó la invitación para ${to}:`, error);
