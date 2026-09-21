@@ -29,19 +29,22 @@ export default function UploadForm({
   const [videoPending, setVideoPending] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  // Guarda sincrónica contra doble envío: disabled={pendingUpload} depende
+  // de un re-render, y un doble click (o doble tap en celular) muy rápido
+  // puede disparar handleSubmit dos veces antes de que React llegue a
+  // deshabilitar el botón. Un ref se lee/escribe al toque, sin esperar
+  // ningún render, así que sí corta el segundo intento a tiempo.
+  const isSubmittingRef = useRef(false);
 
   const state = videoState ?? actionState;
   const pendingUpload = pending || videoPending;
 
   // uploadPhoto (la Server Action, para fotos) no pasa por handleSubmit
   // salvo para armar el FormData, así que el único momento en que sabemos
-  // que ya terminó es cuando cambia actionState: ahí vaciamos el formulario
-  // para que no quede el mismo archivo cargado y el invitado no lo reenvíe
-  // sin querer.
+  // que ya terminó (bien o mal) es cuando cambia actionState.
   useEffect(() => {
-    if (actionState && "success" in actionState) {
-      formRef.current?.reset();
-      setShowDescription(false);
+    if (actionState) {
+      isSubmittingRef.current = false;
     }
   }, [actionState]);
 
@@ -53,6 +56,10 @@ export default function UploadForm({
     // duplicada en la BD.
     event.preventDefault();
 
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     const form = formRef.current;
     const fileInput = form?.elements.namedItem("foto") as HTMLInputElement | null;
     const file = fileInput?.files?.[0];
@@ -61,23 +68,34 @@ export default function UploadForm({
       return;
     }
 
+    isSubmittingRef.current = true;
+
+    const description =
+      (form?.elements.namedItem("descripcion") as HTMLInputElement | null)?.value.trim() ||
+      null;
+
     // Las fotos siguen su flujo normal (Server Action con recompresión).
     // Los videos van directo navegador -> Vercel Blob: son varias veces más
     // rápido que subirlos primero a nuestro servidor y de ahí a Blob.
     if (!file.type.startsWith("video/")) {
-      formAction(new FormData(form!));
+      const formData = new FormData(form!);
+      // Se vacía apenas se dispara el envío (no recién cuando termina), así
+      // queda claro al toque que esa foto ya se mandó y no se puede
+      // reenviar haciendo click de nuevo.
+      form?.reset();
+      setShowDescription(false);
+      formAction(formData);
       return;
     }
 
     setVideoState(undefined);
     setVideoPending(true);
+    form?.reset();
+    setShowDescription(false);
 
     try {
       const extension = file.name.split(".").pop() || "mp4";
       const photoId = crypto.randomUUID();
-      const description =
-        (form?.elements.namedItem("descripcion") as HTMLInputElement | null)?.value.trim() ||
-        null;
 
       const blob = await upload(`pending/${photoId}.${extension}`, file, {
         access: "public",
@@ -87,14 +105,13 @@ export default function UploadForm({
       await createUploadedVideoRequest({ photoId, fileUrl: blob.url, phase, description });
 
       setVideoState({ success: true });
-      form?.reset();
-      setShowDescription(false);
     } catch (error) {
       setVideoState({
         error: error instanceof Error ? error.message : "No se pudo subir el video.",
       });
     } finally {
       setVideoPending(false);
+      isSubmittingRef.current = false;
     }
   }
 
