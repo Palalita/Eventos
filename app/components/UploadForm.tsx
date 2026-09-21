@@ -33,18 +33,29 @@ export default function UploadForm({
   const pendingUpload = pending || videoPending;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    // Siempre a mano, nunca dejando que el <form> dispare su acción nativa
+    // también: si se dejan los dos caminos habilitados a la vez (el
+    // action={formAction} del form y este onSubmit), algunos navegadores
+    // terminan invocando ambos para el mismo archivo y se crea la solicitud
+    // duplicada en la BD.
+    event.preventDefault();
+
     const form = formRef.current;
     const fileInput = form?.elements.namedItem("foto") as HTMLInputElement | null;
     const file = fileInput?.files?.[0];
 
-    // Las fotos siguen su flujo normal (Server Action con recompresión).
-    // Los videos van directo navegador -> Vercel Blob: son varias veces más
-    // rápido que subirlos primero a nuestro servidor y de ahí a Blob.
-    if (!file || !file.type.startsWith("video/")) {
+    if (!file) {
       return;
     }
 
-    event.preventDefault();
+    // Las fotos siguen su flujo normal (Server Action con recompresión).
+    // Los videos van directo navegador -> Vercel Blob: son varias veces más
+    // rápido que subirlos primero a nuestro servidor y de ahí a Blob.
+    if (!file.type.startsWith("video/")) {
+      formAction(new FormData(form!));
+      return;
+    }
+
     setVideoState(undefined);
     setVideoPending(true);
 
