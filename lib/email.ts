@@ -21,16 +21,33 @@ const TEXT = "#212529";
 function renderEmailLayout({
   heading,
   bodyHtml,
+  extraBlockHtml,
   ctaLabel,
   ctaUrl,
   footerNote,
 }: {
   heading: string;
   bodyHtml: string;
+  // Contenido que necesita su propia fila de tabla (p. ej. el código de
+  // invitación): puesto directamente en `bodyHtml` como un <div
+  // inline-block> quedaba flotando al lado de la última línea de texto en
+  // vez de en su propia línea, y esa mezcla con texto corrido es lo que
+  // hacía que Gmail achicara la letra para que "entrara" en el renglón.
+  extraBlockHtml?: string;
   ctaLabel?: string;
   ctaUrl?: string;
   footerNote: string;
 }) {
+  const extraBlock = extraBlockHtml
+    ? `
+        <tr>
+          <td align="center" style="padding: 18px 0 4px;">
+            ${extraBlockHtml}
+          </td>
+        </tr>
+      `
+    : "";
+
   const ctaBlock =
     ctaLabel && ctaUrl
       ? `
@@ -78,6 +95,7 @@ function renderEmailLayout({
                   ${bodyHtml}
                 </td>
               </tr>
+              ${extraBlock}
               ${ctaBlock}
             </table>
           </td>
@@ -156,11 +174,19 @@ export async function sendInvitationEmail(
       bodyHtml: `
         Fuiste invitado a celebrar los XV años de ${quinceaneraNombre}. Con tu código
         vas a poder registrarte, ver las fotos del evento y subir las tuyas.
-        <div style="margin:20px auto 4px; display:inline-block; background:${ROSE_LIGHT}; border:1px solid ${ROSE}; border-radius:12px; padding:12px 28px;">
-          <span style="font-family: Georgia, 'Times New Roman', serif; font-size:28px; font-weight:bold; letter-spacing:6px; color:${ROSE_DARK};">
-            ${code}
-          </span>
-        </div>
+      `,
+      // Tabla en vez de un div "inline-block" metido en el párrafo: así el
+      // código queda en su propio renglón centrado (no flotando al lado de
+      // "subir las tuyas") y el tamaño de letra no varía entre clientes de
+      // correo, que es justo lo que pasaba antes.
+      extraBlockHtml: `
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto; background:${ROSE_LIGHT}; border:1px solid ${ROSE}; border-radius:12px;">
+          <tr>
+            <td style="padding:12px 28px; font-family: Georgia, 'Times New Roman', serif; font-size:28px; line-height:28px; font-weight:bold; letter-spacing:6px; color:${ROSE_DARK}; white-space:nowrap; -webkit-text-size-adjust:100%; text-size-adjust:100%; mso-line-height-rule:exactly;">
+              ${code}
+            </td>
+          </tr>
+        </table>
       `,
       ctaLabel: "Crear mi cuenta",
       ctaUrl: registroUrl,
