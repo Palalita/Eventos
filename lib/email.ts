@@ -18,6 +18,21 @@ const GOLD = "#bda672";
 const CREAM = "#fff8f5";
 const TEXT = "#212529";
 
+// `heading`, `ctaUrl` y `footerNote` son texto plano, no HTML (a diferencia
+// de `bodyHtml`/`extraBlockHtml`, que el llamador arma a mano como HTML de
+// confianza) — así que acá adentro sí hay que escaparlos. Hoy el único dato
+// dinámico que llega es quinceaneraNombre (texto libre que el admin edita
+// en /admin/contenido), pero sin este escape cualquier `<`, `>`, `&` o `"`
+// que contenga rompería el layout de la tabla o el atributo href.
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderEmailLayout({
   heading,
   bodyHtml,
@@ -48,20 +63,21 @@ function renderEmailLayout({
       `
     : "";
 
+  const safeCtaUrl = ctaUrl ? escapeHtml(ctaUrl) : "";
   const ctaBlock =
     ctaLabel && ctaUrl
       ? `
         <tr>
           <td align="center" style="padding: 8px 0 4px;">
-            <a href="${ctaUrl}" style="display:inline-block; background:${ROSE}; color:#ffffff; font-family:Georgia,'Times New Roman',serif; font-size:16px; font-weight:bold; text-decoration:none; padding:12px 32px; border-radius:999px;">
-              ${ctaLabel}
+            <a href="${safeCtaUrl}" style="display:inline-block; background:${ROSE}; color:#ffffff; font-family:Georgia,'Times New Roman',serif; font-size:16px; font-weight:bold; text-decoration:none; padding:12px 32px; border-radius:999px;">
+              ${escapeHtml(ctaLabel)}
             </a>
           </td>
         </tr>
         <tr>
           <td align="center" style="padding: 10px 24px 0; font-family: system-ui, -apple-system, sans-serif; font-size:12px; color:${TEXT}; opacity:0.65; word-break:break-all;">
             O copiá y pegá este enlace en tu navegador:<br />
-            <a href="${ctaUrl}" style="color:${ROSE_DARK};">${ctaUrl}</a>
+            <a href="${safeCtaUrl}" style="color:${ROSE_DARK};">${safeCtaUrl}</a>
           </td>
         </tr>
       `
@@ -87,7 +103,7 @@ function renderEmailLayout({
               </tr>
               <tr>
                 <td align="center" style="font-family: Georgia, 'Times New Roman', serif; color:${ROSE_DARK}; font-size:24px; font-weight:bold; padding-bottom:14px;">
-                  ${heading}
+                  ${escapeHtml(heading)}
                 </td>
               </tr>
               <tr>
@@ -102,7 +118,7 @@ function renderEmailLayout({
         </tr>
         <tr>
           <td align="center" style="padding-top:20px; font-family: system-ui, -apple-system, sans-serif; font-size:12px; color:${TEXT}; opacity:0.55;">
-            ${footerNote}
+            ${escapeHtml(footerNote)}
           </td>
         </tr>
       </table>
@@ -164,6 +180,11 @@ export async function sendInvitationEmail(
     return;
   }
 
+  // quinceaneraNombre es texto libre editable por el admin en
+  // /admin/contenido: se escapa acá antes de meterlo en bodyHtml porque
+  // bodyHtml se trata como HTML de confianza (no pasa por escapeHtml en
+  // renderEmailLayout, a diferencia de heading/footerNote/ctaUrl).
+  const safeName = escapeHtml(quinceaneraNombre);
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({
     from: "Mis XV años <onboarding@resend.dev>",
@@ -172,7 +193,7 @@ export async function sendInvitationEmail(
     html: renderEmailLayout({
       heading: `¡Estás invitado${quinceaneraNombre ? `, celebrá con ${quinceaneraNombre}` : ""}!`,
       bodyHtml: `
-        Fuiste invitado a celebrar los XV años de ${quinceaneraNombre}. Con tu código
+        Fuiste invitado a celebrar los XV años de ${safeName}. Con tu código
         vas a poder registrarte, ver las fotos del evento y subir las tuyas.
       `,
       // Tabla en vez de un div "inline-block" metido en el párrafo: así el
@@ -189,7 +210,7 @@ export async function sendInvitationEmail(
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto; background:${ROSE_LIGHT}; border:1px solid ${ROSE}; border-radius:12px;">
           <tr>
             <td style="padding:12px 28px; font-family:'Courier New', Courier, monospace; font-size:28px; line-height:28px; font-weight:bold; letter-spacing:6px; color:${ROSE_DARK}; white-space:nowrap; -webkit-text-size-adjust:100%; text-size-adjust:100%; mso-line-height-rule:exactly;">
-              ${code}
+              ${escapeHtml(code)}
             </td>
           </tr>
         </table>
