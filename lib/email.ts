@@ -129,10 +129,8 @@ export async function sendDeviceVerificationEmail(to: string, verifyUrl: string)
     html: renderEmailLayout({
       heading: "Verificación de dispositivo",
       bodyHtml: `
-        Se detectó un intento de inicio de sesión en el panel de administración desde un
-        dispositivo no reconocido. Si usted realizó este intento, confirme su identidad
-        haciendo clic en el siguiente botón para continuar. Si no reconoce esta actividad,
-        ignore este mensaje: su cuenta permanecerá protegida y no se iniciará ninguna sesión.
+        Se detectó un inicio de sesión en el panel de administración desde un dispositivo
+        no reconocido. Si fue usted, confírmelo a continuación. Si no, ignore este mensaje.
       `,
       ctaLabel: "Confirmar identidad e iniciar sesión",
       ctaUrl: verifyUrl,
