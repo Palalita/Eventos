@@ -7,13 +7,20 @@
 // la URL), así que el texto es genérico de la plataforma, no el lema de un
 // evento puntual.
 import { Suspense } from "react";
+import Link from "next/link";
+import { COMPANY_NAME } from "@/lib/company";
 import LoginForm from "./LoginForm";
 
 export default function LoginPage() {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <p className="invite-eyebrow">Mis XV años</p>
+        <div className="auth-back-row">
+          <Link href="/" className="auth-back-link">
+            ← Volver
+          </Link>
+        </div>
+        <p className="platform-eyebrow">{COMPANY_NAME}</p>
         <h1>Iniciar sesión</h1>
         {/* Next.js exige envolver en <Suspense> a cualquier componente que
             use useSearchParams() (como LoginForm, para leer ?device=...) */}

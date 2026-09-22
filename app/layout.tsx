@@ -8,6 +8,9 @@ import { Playfair_Display, Alex_Brush, Cormorant, Poppins } from "next/font/goog
 import "./globals.css";
 import { getEventSettings } from "@/lib/settings";
 import { getSession } from "@/lib/session";
+import { db } from "@/lib/db";
+import { isValidTheme } from "@/lib/themes";
+import { COMPANY_NAME } from "@/lib/company";
 
 // Cada fuente se expone como variable CSS (--font-heading, etc.) en vez de
 // aplicarse directo, para que app/globals.css decida dónde usar cada una.
@@ -47,21 +50,48 @@ export async function generateMetadata(): Promise<Metadata> {
   if (session?.organizationId) {
     const settings = await getEventSettings(session.organizationId);
     return {
-      title: `Mis XV años · ${settings.tituloEvento}`,
+      title: `${settings.tituloEvento} · ${COMPANY_NAME}`,
       description: "Sitio del evento: invitaciones y galería de fotos.",
     };
   }
   return {
-    title: "Mis XV años",
+    title: COMPANY_NAME,
     description: "Sitios web para eventos: invitaciones, fotos y más.",
   };
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// Qué clase de tema (.theme-xv_rosa_dorado, .theme-boda_salvia, ver
+// app/globals.css y lib/themes.ts) va en <html>. Sin sesión con
+// organización (landing, login, crear-cuenta, /master, o un MASTER
+// logueado) no se aplica ninguna: manda la identidad propia de la
+// plataforma que ya vive en :root, no la de ningún cliente.
+//
+// Caso no cubierto a propósito por ahora: /invitacion/[token] visitada SIN
+// sesión (un invitado que todavía no inició sesión, entrando desde su
+// link) muestra la identidad de la plataforma en vez del tema de esa
+// organización — se resolvería leyendo el token acá, pero este layout no
+// tiene el pathname sin agregar ese cableado; queda para la próxima vez
+// que se toque el sistema de temas.
+async function resolveThemeClassName() {
+  const session = await getSession();
+  if (!session?.organizationId) return "";
+
+  const organization = await db.organization.findUnique({
+    where: { id: session.organizationId },
+    select: { theme: true },
+  });
+  if (!organization || !isValidTheme(organization.theme)) return "";
+
+  return `theme-${organization.theme}`;
+}
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const themeClassName = await resolveThemeClassName();
+
   return (
     <html
       lang="es"
-      className={`${playfair.variable} ${alexBrush.variable} ${cormorant.variable} ${poppins.variable}`}
+      className={`${playfair.variable} ${alexBrush.variable} ${cormorant.variable} ${poppins.variable} ${themeClassName}`}
     >
       <body>{children}</body>
     </html>

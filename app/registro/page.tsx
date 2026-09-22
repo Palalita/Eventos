@@ -1,7 +1,9 @@
 // Página pública de registro (crear cuenta con el código de invitación). El
 // formulario real vive en ./SignupForm.tsx (componente de cliente).
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { getEventSettings } from "@/lib/settings";
+import { COMPANY_NAME } from "@/lib/company";
 import SignupForm from "./SignupForm";
 
 export default async function RegistroPage({
@@ -18,14 +20,24 @@ export default async function RegistroPage({
     typeof code === "string" && code
       ? await db.invitation.findUnique({ where: { code: code.toUpperCase() } })
       : null;
-  const lema = invitation
-    ? (await getEventSettings(invitation.organizationId)).lema
-    : "Mis XV años";
+  const lema = invitation ? (await getEventSettings(invitation.organizationId)).lema : null;
 
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <p className="invite-eyebrow">{lema}</p>
+        <div className="auth-back-row">
+          <Link href="/" className="auth-back-link">
+            ← Volver
+          </Link>
+        </div>
+        {/* Con invitación resuelta se muestra el lema real del evento (marca
+            del cliente, por eso la cursiva); sin ella, es genérico de la
+            plataforma. */}
+        {lema ? (
+          <p className="invite-eyebrow">{lema}</p>
+        ) : (
+          <p className="platform-eyebrow">{COMPANY_NAME}</p>
+        )}
         <h1>Crear mi invitación</h1>
         <p className="auth-subtitle">
           Necesitas el código de invitación que te enviamos por correo para

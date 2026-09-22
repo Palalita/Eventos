@@ -5,11 +5,7 @@
 // proxy.ts, que ya no protege "/".
 import type { Metadata } from "next";
 import Link from "next/link";
-
-// Nombre de la empresa: un solo lugar para cambiarlo. "Eventos" es un
-// placeholder (viene del nombre del repo); reemplazar por el nombre real
-// del negocio cuando se defina.
-const COMPANY_NAME = "Eventos";
+import { COMPANY_NAME } from "@/lib/company";
 
 // Metadata propia (no la genérica del layout raíz — ver
 // app/layout.tsx#generateMetadata): esta es la única página realmente
@@ -66,7 +62,7 @@ export default function LandingPage() {
       </header>
 
       <section className="hero landing-hero">
-        <p className="hero-eyebrow">Sitios web para eventos</p>
+        <p className="platform-eyebrow">Sitios web para eventos</p>
         <h1 className="landing-hero-title">El sitio de tu evento, listo en minutos</h1>
         <p className="landing-hero-subtitle">
           Creamos sitios elegantes para XV años, bodas y todo tipo de

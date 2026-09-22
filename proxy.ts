@@ -6,16 +6,21 @@ const authRoutes = ["/login", "/registro", "/crear-cuenta"];
 
 // "/" es pública (landing de la empresa); "/panel" es el sitio de un
 // evento/organización puntual y sí requiere sesión — ver app/page.tsx vs.
-// app/panel/page.tsx.
+// app/panel/page.tsx. "/master" es el login de la empresa (no enlazado
+// desde ningún lado); "/master/panel" y el resto de "/master/*" exigen esa
+// sesión.
 export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const isPanelRoute = path === "/panel" || path.startsWith("/panel/");
   const isAuthRoute = authRoutes.some((r) => path.startsWith(r));
   const isAdminOnlyRoute = path === "/admin" || path.startsWith("/admin/");
+  const isMasterLoginRoute = path === "/master";
+  const isMasterOnlyRoute = path.startsWith("/master/");
 
   const cookie = req.cookies.get("session")?.value;
   let session = await decrypt(cookie);
-  const needsSessionCheck = isPanelRoute || isAdminOnlyRoute || isAuthRoute;
+  const needsSessionCheck =
+    isPanelRoute || isAdminOnlyRoute || isAuthRoute || isMasterLoginRoute || isMasterOnlyRoute;
 
   // Cookies firmadas antes de multi-tenant no tienen organizationId en su
   // payload (la clave ni existe, a diferencia de un MASTER real, que sí la
@@ -68,6 +73,24 @@ export default async function proxy(req: NextRequest) {
   }
 
   if (isAuthRoute && session?.userId) {
+    return NextResponse.redirect(new URL("/panel", req.nextUrl));
+  }
+
+  if (isMasterOnlyRoute && !session?.userId) {
+    return NextResponse.redirect(new URL("/master", req.nextUrl));
+  }
+
+  if (isMasterOnlyRoute && session?.role !== "MASTER") {
+    return NextResponse.redirect(new URL("/panel", req.nextUrl));
+  }
+
+  if (isMasterLoginRoute && session?.role === "MASTER") {
+    return NextResponse.redirect(new URL("/master/panel", req.nextUrl));
+  }
+
+  // Ya logueado pero como ADMIN/GUEST, no MASTER: no tiene sentido
+  // mostrarle el formulario de login de la empresa.
+  if (isMasterLoginRoute && session?.userId && session.role !== "MASTER") {
     return NextResponse.redirect(new URL("/panel", req.nextUrl));
   }
 

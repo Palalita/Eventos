@@ -1,16 +1,46 @@
 @import "tailwindcss";
 
+/* Estos nombres de variable (--rose, --gold, etc.) quedaron de cuando el
+   sitio era de un solo cliente (XV años, paleta rosa/dorado) — ahora son la
+   identidad de LA PLATAFORMA (la empresa): landing, login, crear-cuenta,
+   /master. El look "XV años rosa/dorado" de antes sigue existiendo tal
+   cual, pero como un tema explícito (.theme-xv_rosa_dorado, más abajo) que
+   se aplica solo a la organización que lo tenga elegido — nunca a las
+   páginas de la empresa. Ver app/layout.tsx, que decide qué clase de tema
+   poner en <html> según la sesión (o el token de invitación). */
 :root {
-  --rose: #d86c7d;
-  --rose-dark: #8d2536;
-  --rose-light: #f5cbd5;
-  --gold: #bda672;
-  --cream: #fff8f5;
+  --rose: #2f6f62;
+  --rose-dark: #163f37;
+  --rose-light: #d7e8e3;
+  --gold: #b08d55;
+  --cream: #f6f5f1;
+  --gradient-mid: #e9f1ee;
   --text: #212529;
   --font-heading: "Playfair Display", serif;
   --font-script: "Alex Brush", cursive;
   --font-accent: "Cormorant", serif;
   --font-body: "Poppins", sans-serif;
+}
+
+/* El tema original del sitio (XV años, rosa/dorado) — el único disponible
+   hoy para que un cliente elija al crear su evento (ver lib/themes.ts). */
+.theme-xv_rosa_dorado {
+  --rose: #d86c7d;
+  --rose-dark: #8d2536;
+  --rose-light: #f5cbd5;
+  --gold: #bda672;
+  --cream: #fff8f5;
+  --gradient-mid: #fdeef2;
+}
+
+/* Segundo tema disponible al crear un evento (ver lib/themes.ts). */
+.theme-boda_salvia {
+  --rose: #7d9678;
+  --rose-dark: #445940;
+  --rose-light: #dde6d9;
+  --gold: #c2a878;
+  --cream: #faf9f5;
+  --gradient-mid: #eef1e8;
 }
 
 * {
@@ -24,7 +54,7 @@ body {
 }
 
 body {
-  background: linear-gradient(180deg, var(--cream), #fdeef2 40%, var(--cream));
+  background: linear-gradient(180deg, var(--cream), var(--gradient-mid) 40%, var(--cream));
   color: var(--text);
   font-family: var(--font-body);
 }
@@ -482,6 +512,88 @@ a {
   font-size: 0.85rem;
   text-align: center;
 }
+.auth-back-row {
+  /* .auth-card centra todo su texto; este link necesita quedar pegado a
+     la izquierda en su propia fila, arriba del resto. */
+  text-align: left;
+  margin-bottom: 1rem;
+}
+.auth-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--rose-dark);
+  text-decoration: none;
+}
+.auth-back-link:hover {
+  text-decoration: underline;
+}
+
+/* --- Selector de tema (app/crear-cuenta/CreateOrgForm.tsx) --- */
+.theme-picker {
+  border: none;
+  padding: 0;
+  margin: 0.6rem 0 0;
+}
+.theme-picker legend {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0;
+  margin-bottom: 0.5rem;
+}
+.theme-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+/* Radio nativo (accesible, focuseable con teclado) pero visualmente oculto
+   — la selección se ve en el borde de .theme-option-label, no en el radio. */
+.theme-option-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+.theme-option-label {
+  display: block;
+  border: 2px solid var(--rose-light);
+  border-radius: 12px;
+  padding: 0.65rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+.theme-option-input:checked + .theme-option-label {
+  border-color: var(--rose);
+}
+.theme-option-input:focus-visible + .theme-option-label {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+.theme-option-preview {
+  display: flex;
+  height: 18px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+.theme-option-preview span {
+  flex: 1;
+}
+.theme-option-name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.theme-option-description {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text);
+  opacity: 0.75;
+  margin-top: 0.2rem;
+}
 .field-error {
   color: #b3261e;
   font-size: 0.8rem;
@@ -519,6 +631,18 @@ a {
 .invite-eyebrow {
   font-family: var(--font-script);
   font-size: 1.5rem;
+  color: var(--gold);
+  margin: 0;
+}
+/* Igual que .invite-eyebrow pero sin la fuente cursiva (script), que lee
+   como "invitación de boda/XV" — usada en las páginas de la empresa
+   (login, crear-cuenta) para que se sientan parte de la plataforma, no de
+   la temática de un cliente. */
+.platform-eyebrow {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
   color: var(--gold);
   margin: 0;
 }
@@ -1079,8 +1203,12 @@ a {
   margin: 0 auto;
 }
 .landing-brand {
-  font-family: var(--font-script);
-  font-size: 1.6rem;
+  /* Serif en negrita, no la cursiva de .invite-eyebrow: es la marca de la
+     empresa, no la de un evento de cliente. */
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.01em;
   color: var(--rose-dark);
   text-decoration: none;
 }

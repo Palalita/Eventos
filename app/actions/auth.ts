@@ -135,6 +135,18 @@ export async function login(_state: LoginFormState, formData: FormData) {
     return { message: "Correo o contraseña incorrectos." };
   }
 
+  // ADMIN/GUEST siempre tiene organización (ver CHECK constraint en la
+  // migración add_organizations). Si el master la suspendió (ver
+  // toggleOrganizationStatus en app/actions/master.ts), nadie de esa
+  // organización puede entrar hasta que se reactive.
+  const organization = await db.organization.findUnique({
+    where: { id: user.organizationId! },
+    select: { status: true },
+  });
+  if (organization?.status === "SUSPENDED") {
+    return { message: "Esta cuenta está suspendida temporalmente. Contactá a soporte." };
+  }
+
   if (user.role === "ADMIN") {
     const deviceToken = await getOrCreateDeviceToken();
     const trusted = await db.trustedDevice.findUnique({

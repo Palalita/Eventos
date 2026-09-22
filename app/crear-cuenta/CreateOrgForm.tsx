@@ -6,6 +6,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { createOrganization } from "@/app/actions/organizations";
+import { THEMES, DEFAULT_THEME } from "@/lib/themes";
 
 export default function CreateOrgForm() {
   const [state, action, pending] = useActionState(createOrganization, undefined);
@@ -23,6 +24,34 @@ export default function CreateOrgForm() {
       {state?.errors?.eventName && (
         <p className="field-error">{state.errors.eventName}</p>
       )}
+
+      <fieldset className="theme-picker">
+        <legend>Elegí un diseño para tu sitio</legend>
+        <div className="theme-picker-grid">
+          {THEMES.map((theme) => (
+            <div key={theme.id} className="theme-option">
+              <input
+                type="radio"
+                id={`theme-${theme.id}`}
+                name="theme"
+                value={theme.id}
+                defaultChecked={theme.id === DEFAULT_THEME}
+                className="theme-option-input"
+              />
+              <label htmlFor={`theme-${theme.id}`} className="theme-option-label">
+                <span className="theme-option-preview" aria-hidden="true">
+                  {theme.preview.map((color, i) => (
+                    <span key={i} style={{ background: color }} />
+                  ))}
+                </span>
+                <span className="theme-option-name">{theme.label}</span>
+                <span className="theme-option-description">{theme.description}</span>
+              </label>
+            </div>
+          ))}
+        </div>
+      </fieldset>
+      {state?.errors?.theme && <p className="field-error">{state.errors.theme}</p>}
 
       <label htmlFor="name">Tu nombre completo</label>
       <input id="name" name="name" type="text" required />

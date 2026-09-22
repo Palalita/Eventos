@@ -47,3 +47,6 @@ next-env.d.ts
 # Claude Code (herramienta local, no forma parte del proyecto)
 /.claude/
 /CLAUDE.md
+
+# capturas de pruebas con Playwright MCP (herramienta local)
+/.playwright-mcp/

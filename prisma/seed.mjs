@@ -13,6 +13,13 @@ const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
 const ORG_SLUG = process.env.SEED_ORG_SLUG || "valentina-xv";
 const ORG_NAME = process.env.SEED_ORG_NAME || "Valentina";
+// MASTER es la cuenta de la empresa (ve/administra todas las
+// organizaciones desde /master) — no hay forma de crearla desde ningún
+// formulario público a propósito, así que se siembra a mano acá, igual
+// que el admin de arriba: definí estas dos en tu .env y corré `npm run
+// seed` una vez, con TU propio correo y una contraseña fuerte.
+const MASTER_EMAIL = process.env.SEED_MASTER_EMAIL;
+const MASTER_PASSWORD = process.env.SEED_MASTER_PASSWORD;
 
 // Debe coincidir con lib/site-sections.ts
 const SITE_SECTIONS = [
@@ -52,6 +59,29 @@ async function main() {
       console.log(`Admin creado: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
     } else {
       console.log(`Ya existe un admin con el correo ${ADMIN_EMAIL}`);
+    }
+  }
+
+  if (!MASTER_EMAIL || !MASTER_PASSWORD) {
+    console.warn(
+      "Faltan SEED_MASTER_EMAIL y/o SEED_MASTER_PASSWORD: me salteo la creación del master. Definilas en .env si necesitás una cuenta para /master."
+    );
+  } else {
+    const existingMaster = await db.user.findUnique({ where: { email: MASTER_EMAIL } });
+    if (!existingMaster) {
+      const passwordHash = await bcrypt.hash(MASTER_PASSWORD, 10);
+      await db.user.create({
+        data: {
+          name: "Master",
+          email: MASTER_EMAIL,
+          passwordHash,
+          role: "MASTER",
+          organizationId: null,
+        },
+      });
+      console.log(`Master creado: ${MASTER_EMAIL} / ${MASTER_PASSWORD}`);
+    } else {
+      console.log(`Ya existe un master con el correo ${MASTER_EMAIL}`);
     }
   }
 
