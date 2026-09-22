@@ -51,41 +51,24 @@ const SERVICIOS = [
 export default function LandingPage() {
   return (
     <main>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "1.2rem 1.5rem",
-          maxWidth: "1100px",
-          margin: "0 auto",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "var(--font-script)",
-            fontSize: "1.6rem",
-            color: "var(--rose-dark)",
-          }}
-        >
+      <header className="landing-header">
+        <Link href="/" className="landing-brand">
           {COMPANY_NAME}
-        </span>
-        <div style={{ display: "flex", gap: "0.6rem" }}>
+        </Link>
+        <nav aria-label="Cuenta" className="landing-header-actions">
           <Link href="/login" className="btn btn-ghost">
             Iniciar sesión
           </Link>
           <Link href="/crear-cuenta" className="btn btn-primary">
             Crear mi evento
           </Link>
-        </div>
+        </nav>
       </header>
 
-      <section className="hero" style={{ minHeight: "auto", padding: "2.5rem 1.5rem 3rem" }}>
+      <section className="hero landing-hero">
         <p className="hero-eyebrow">Sitios web para eventos</p>
-        <h1 style={{ maxWidth: "620px" }}>
-          El sitio de tu evento, listo en minutos
-        </h1>
-        <p style={{ maxWidth: "520px", fontSize: "1.05rem" }}>
+        <h1 className="landing-hero-title">El sitio de tu evento, listo en minutos</h1>
+        <p className="landing-hero-subtitle">
           Creamos sitios elegantes para XV años, bodas y todo tipo de
           celebraciones: invitaciones digitales, galería de fotos compartida
           con tus invitados, y un panel para administrar todo desde un solo
@@ -101,34 +84,28 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "1rem 1.5rem 3rem" }}>
-        <h2 style={{ textAlign: "center", marginBottom: "1.8rem" }}>Qué incluye</h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "1.2rem",
-          }}
-        >
+      <section className="landing-services" aria-labelledby="landing-services-title">
+        <h2 id="landing-services-title">Qué incluye</h2>
+        <ul className="landing-services-grid">
           {SERVICIOS.map((servicio) => (
-            <div key={servicio.title} className="card" style={{ margin: 0 }}>
-              <div style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>
+            <li key={servicio.title} className="card service-card">
+              <div className="service-icon" aria-hidden="true">
                 {servicio.icon}
               </div>
               <h3>{servicio.title}</h3>
-              <p style={{ fontSize: "0.92rem", margin: 0 }}>{servicio.description}</p>
-            </div>
+              <p>{servicio.description}</p>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section className="content-section">
         <h2>¿Ya tenés tu evento con nosotros?</h2>
-        <p style={{ fontFamily: "var(--font-body)", fontStyle: "normal" }}>
+        <p className="landing-cta-text">
           Iniciá sesión para mandar invitaciones y revisar las fotos de tus
           invitados.
         </p>
-        <Link href="/login" className="btn btn-primary" style={{ marginTop: "0.8rem" }}>
+        <Link href="/login" className="btn btn-primary landing-cta-action">
           Iniciar sesión
         </Link>
       </section>

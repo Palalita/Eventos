@@ -1066,3 +1066,81 @@ a {
   font-size: 0.9rem;
   white-space: nowrap;
 }
+
+/* --- Landing pública de la empresa (app/page.tsx) --- */
+.landing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1.2rem 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.landing-brand {
+  font-family: var(--font-script);
+  font-size: 1.6rem;
+  color: var(--rose-dark);
+  text-decoration: none;
+}
+.landing-header-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.landing-hero {
+  min-height: auto;
+  padding: 2.5rem 1.5rem 3rem;
+}
+.landing-hero-title {
+  max-width: 620px;
+}
+.landing-hero-subtitle {
+  max-width: 520px;
+  font-size: 1.05rem;
+}
+.landing-services {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 3rem;
+}
+.landing-services h2 {
+  text-align: center;
+  margin-bottom: 1.8rem;
+}
+.landing-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.service-card {
+  margin: 0;
+}
+.service-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+.service-card p {
+  font-size: 0.92rem;
+  margin: 0;
+}
+.landing-cta-text {
+  font-family: var(--font-body);
+  font-style: normal;
+}
+.landing-cta-action {
+  margin-top: 0.8rem;
+}
+@media (max-width: 380px) {
+  /* Nombre + 2 botones no entran cómodos en una fila en celulares chicos;
+     que el nombre ocupe su propia línea evita que los botones se aprieten
+     o el texto se corte. */
+  .landing-header {
+    justify-content: center;
+    text-align: center;
+  }
+}
