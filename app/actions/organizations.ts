@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { provisionOrganization } from "@/lib/organizations";
 import { isValidTheme, DEFAULT_THEME } from "@/lib/themes";
+import { isValidFont, DEFAULT_FONT } from "@/lib/fonts";
 import {
   CreateOrganizationFormSchema,
   CreateOrganizationFormState,
@@ -24,6 +25,7 @@ export async function createOrganization(
     email: formData.get("email"),
     password: formData.get("password"),
     theme: formData.get("theme"),
+    font: formData.get("font"),
   });
 
   if (!validatedFields.success) {
@@ -31,12 +33,15 @@ export async function createOrganization(
   }
 
   const { eventName, name, email, password } = validatedFields.data;
-  // El picker manda un radio con name="theme"; si por algo llegara vacío o
-  // con un id que ya no existe (un tema que se sacó del registro), se cae
-  // al default en vez de guardar basura en la BD.
+  // Los pickers mandan radios con name="theme"/"font"; si por algo
+  // llegara vacío o con un id que ya no existe (una opción que se sacó
+  // del registro), se cae al default en vez de guardar basura en la BD.
   const theme = isValidTheme(validatedFields.data.theme)
     ? validatedFields.data.theme
     : DEFAULT_THEME;
+  const font = isValidFont(validatedFields.data.font)
+    ? validatedFields.data.font
+    : DEFAULT_FONT;
 
   // User.email sigue siendo único a nivel de toda la plataforma (una
   // persona = una identidad, aunque después administre o sea invitada a
@@ -50,7 +55,7 @@ export async function createOrganization(
   // corren en paralelo en vez de uno tras otro.
   const [passwordHash, organization] = await Promise.all([
     bcrypt.hash(password, 10),
-    provisionOrganization({ eventName, theme }),
+    provisionOrganization({ eventName, theme, font }),
   ]);
 
   const user = await db.user.create({

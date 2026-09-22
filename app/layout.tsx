@@ -4,12 +4,13 @@
 // global — ver ese archivo para la paleta de colores y componentes .btn,
 // .card, etc. que usan las páginas).
 import type { Metadata } from "next";
-import { Playfair_Display, Alex_Brush, Cormorant, Poppins } from "next/font/google";
+import { Playfair_Display, Alex_Brush, Cormorant, Poppins, Manrope, Fraunces } from "next/font/google";
 import "./globals.css";
 import { getEventSettings } from "@/lib/settings";
 import { getSession } from "@/lib/session";
 import { db } from "@/lib/db";
 import { isValidTheme } from "@/lib/themes";
+import { isValidFont } from "@/lib/fonts";
 import { COMPANY_NAME } from "@/lib/company";
 
 // Cada fuente se expone como variable CSS (--font-heading, etc.) en vez de
@@ -37,6 +38,22 @@ const poppins = Poppins({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
+});
+
+// Las dos fuentes de acá abajo alimentan las combinaciones tipográficas
+// "moderna" y "editorial" de lib/fonts.ts — se cargan siempre (como el
+// resto) pero solo se usan cuando la organización activa eligió esa
+// combinación (ver .font-moderna/.font-editorial en globals.css).
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: ["500", "600"],
 });
 
 // Next.js llama a esto para armar el <title>/<meta> de cada página; como lee
@@ -72,26 +89,28 @@ export async function generateMetadata(): Promise<Metadata> {
 // organización — se resolvería leyendo el token acá, pero este layout no
 // tiene el pathname sin agregar ese cableado; queda para la próxima vez
 // que se toque el sistema de temas.
-async function resolveThemeClassName() {
+async function resolveThemeClassNames() {
   const session = await getSession();
   if (!session?.organizationId) return "";
 
   const organization = await db.organization.findUnique({
     where: { id: session.organizationId },
-    select: { theme: true },
+    select: { theme: true, font: true },
   });
-  if (!organization || !isValidTheme(organization.theme)) return "";
+  if (!organization) return "";
 
-  return `theme-${organization.theme}`;
+  const themeClassName = isValidTheme(organization.theme) ? `theme-${organization.theme}` : "";
+  const fontClassName = isValidFont(organization.font) ? `font-${organization.font}` : "";
+  return `${themeClassName} ${fontClassName}`.trim();
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const themeClassName = await resolveThemeClassName();
+  const themeClassNames = await resolveThemeClassNames();
 
   return (
     <html
       lang="es"
-      className={`${playfair.variable} ${alexBrush.variable} ${cormorant.variable} ${poppins.variable} ${themeClassName}`}
+      className={`${playfair.variable} ${alexBrush.variable} ${cormorant.variable} ${poppins.variable} ${manrope.variable} ${fraunces.variable} ${themeClassNames}`}
     >
       <body>{children}</body>
     </html>

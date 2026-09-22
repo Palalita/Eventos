@@ -77,8 +77,11 @@ model Organization {
   // página pública por evento.
   slug      String    @unique
   name      String
-  // Referencia a un preset de lib/themes.ts — nunca CSS/colores libres.
+  // Paleta de color y tipografía se eligen por separado (ver
+  // app/crear-cuenta/CreateOrgForm.tsx, el wizard de 3 pasos) — cada una
+  // referencia un preset (lib/themes.ts / lib/fonts.ts), nunca CSS libre.
   theme     String    @default("xv_rosa_dorado")
+  font      String    @default("clasica")
   status    OrgStatus @default(ACTIVE)
   createdAt DateTime  @default(now())
 

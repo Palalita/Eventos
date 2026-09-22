@@ -83,22 +83,6 @@
   --cream: #f7f8fa;
   --gradient-mid: #ebeef3;
 }
-.theme-aniversario_vino {
-  --rose: #7a2e3d;
-  --rose-dark: #4a1620;
-  --rose-light: #e8d3d7;
-  --gold: #cdb079;
-  --cream: #fbf7f2;
-  --gradient-mid: #f3e7e4;
-}
-.theme-compromiso_blush {
-  --rose: #dba0a8;
-  --rose-dark: #96525b;
-  --rose-light: #f5e2e4;
-  --gold: #c9ae7c;
-  --cream: #fdf9f7;
-  --gradient-mid: #f8ecec;
-}
 .theme-corporativo_acero {
   --rose: #4c6b82;
   --rose-dark: #263849;
@@ -114,6 +98,27 @@
   --gold: #8a9a5b;
   --cream: #fdf9f4;
   --gradient-mid: #f5ede2;
+}
+
+/* Combinaciones tipográficas (ver lib/fonts.ts) — independientes de la
+   paleta de color de arriba. --font-body se queda siempre en Poppins
+   (--font-body no se toca acá) para que el texto de párrafo sea
+   consistente entre organizaciones; solo cambian título/script/acento.
+   Las fuentes en sí se cargan una sola vez en app/layout.tsx. */
+.font-clasica {
+  --font-heading: "Playfair Display", serif;
+  --font-script: "Alex Brush", cursive;
+  --font-accent: "Cormorant", serif;
+}
+.font-moderna {
+  --font-heading: var(--font-manrope);
+  --font-script: var(--font-manrope);
+  --font-accent: var(--font-manrope);
+}
+.font-editorial {
+  --font-heading: var(--font-fraunces);
+  --font-script: var(--font-fraunces);
+  --font-accent: var(--font-fraunces);
 }
 
 * {
@@ -555,6 +560,18 @@ a {
   box-shadow: 0 10px 30px rgba(122, 31, 75, 0.12);
   text-align: center;
 }
+/* El wizard de /crear-cuenta (paletas + tipografías con vista previa)
+   necesita bastante más aire que un login de 2 campos — el resto de
+   .auth-card se queda en 420px. */
+.auth-card--wide {
+  max-width: 760px;
+  padding: 2.5rem 3rem;
+}
+@media (max-width: 620px) {
+  .auth-card--wide {
+    padding: 2rem 1.5rem;
+  }
+}
 .auth-subtitle {
   color: var(--rose);
   font-size: 0.95rem;
@@ -567,11 +584,14 @@ a {
   margin-top: 1.2rem;
 }
 .auth-form label {
+  display: block;
   font-size: 0.85rem;
   font-weight: 500;
   margin-top: 0.6rem;
 }
 .auth-form input {
+  display: block;
+  width: 100%;
   padding: 0.6rem 0.8rem;
   border-radius: 10px;
   border: 1px solid var(--rose-light);
@@ -680,6 +700,172 @@ a {
 }
 .form-success {
   color: #2e7d32;
+  font-size: 0.9rem;
+}
+
+/* --- Wizard de creación de evento (app/crear-cuenta/CreateOrgForm.tsx) --- */
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.2rem;
+}
+.wizard-progress-item {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.wizard-progress-item:last-child {
+  flex: 0 0 auto;
+}
+.wizard-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--rose-dark);
+  opacity: 0.45;
+  white-space: nowrap;
+}
+.wizard-progress-step[data-active="true"] {
+  opacity: 1;
+  font-weight: 600;
+}
+.wizard-progress-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--rose-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+}
+.wizard-progress-step[data-active="true"] .wizard-progress-dot {
+  border-color: var(--rose);
+  background: var(--rose);
+  color: white;
+}
+.wizard-progress-connector {
+  flex: 1;
+  height: 1px;
+  background: var(--rose-light);
+  margin: 0 0.5rem;
+}
+/* En pantallas muy angostas, "Datos — Colores — Tipografía" ya no entra
+   en una sola fila sin desbordar — se esconde el texto (visualmente,
+   sigue disponible para lectores de pantalla) y quedan solo los números. */
+@media (max-width: 420px) {
+  .wizard-progress-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .wizard-progress-connector {
+    margin: 0 0.3rem;
+  }
+}
+
+.wizard-step {
+  animation: wizard-step-in 0.35s ease;
+}
+@keyframes wizard-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wizard-step {
+    animation: none;
+  }
+}
+
+.wizard-step-hint {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0 0 0.8rem;
+}
+
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+}
+.wizard-nav-spacer {
+  flex: 1;
+}
+.wizard-nav .btn {
+  margin-top: 0;
+}
+
+/* Le da más espacio a cada opción de color en el paso 2, en vez de las
+   tarjetas chicas que usa el resto del sitio. */
+.wizard-palette-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.wizard-palette-swatch {
+  height: 36px;
+  border-radius: 8px;
+}
+
+.wizard-font-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.wizard-font-sample {
+  display: block;
+  font-size: 1.7rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  color: var(--rose-dark);
+}
+
+.wizard-preview {
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--cream);
+  border: 1px solid var(--rose-light);
+  margin-top: 1.2rem;
+}
+.wizard-preview-eyebrow {
+  font-family: var(--font-accent);
+  font-style: italic;
+  color: var(--gold);
+  font-size: 0.85rem;
+  margin: 0 0 0.3rem;
+}
+.wizard-preview-title {
+  font-family: var(--font-heading);
+  color: var(--rose-dark);
+  font-size: 1.4rem;
+  margin: 0;
+}
+.wizard-preview-action {
+  display: inline-block;
+  margin-top: 0.9rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  background: var(--rose);
+  color: white;
+  font-family: var(--font-accent);
   font-size: 0.9rem;
 }
 

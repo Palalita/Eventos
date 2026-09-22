@@ -10,6 +10,7 @@ import { randomInt } from "node:crypto";
 import { db } from "@/lib/db";
 import { SITE_SECTIONS } from "@/lib/site-sections";
 import { DEFAULT_THEME } from "@/lib/themes";
+import { DEFAULT_FONT } from "@/lib/fonts";
 
 const SLUG_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -47,6 +48,7 @@ async function generateUniqueSlug(name: string) {
 export async function provisionOrganization(input: {
   eventName: string;
   theme?: string;
+  font?: string;
 }) {
   const slug = await generateUniqueSlug(input.eventName);
 
@@ -55,6 +57,7 @@ export async function provisionOrganization(input: {
       slug,
       name: input.eventName,
       theme: input.theme ?? DEFAULT_THEME,
+      font: input.font ?? DEFAULT_FONT,
     },
   });
 

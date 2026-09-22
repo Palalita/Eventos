@@ -48,9 +48,11 @@ export const CreateOrganizationFormSchema = z.object({
   password: z
     .string()
     .min(6, { error: "La contraseña debe tener al menos 6 caracteres." }),
-  // Uno de los ids en lib/themes.ts; se valida contra esa lista en la
-  // Server Action (no acá, para no importar lib/themes.ts en el esquema).
-  theme: z.string().min(1, { error: "Elegí un diseño para tu evento." }),
+  // Uno de los ids en lib/themes.ts / lib/fonts.ts; se validan contra esas
+  // listas en la Server Action (no acá, para no importar esos módulos en
+  // el esquema).
+  theme: z.string().min(1, { error: "Elegí una paleta de color para tu evento." }),
+  font: z.string().min(1, { error: "Elegí una tipografía para tu evento." }),
 });
 
 export type CreateOrganizationFormState =
@@ -61,6 +63,7 @@ export type CreateOrganizationFormState =
         email?: string[];
         password?: string[];
         theme?: string[];
+        font?: string[];
       };
       message?: string;
     }
