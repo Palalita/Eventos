@@ -1490,6 +1490,16 @@ a {
 .landing .btn-ghost:hover {
   background: rgba(23, 24, 26, 0.06);
 }
+/* /login usa .auth-card/.auth-form (compartidos con /crear-cuenta,
+   /registro, /master) directo, sin pasar por ninguna clase propia de la
+   landing — así que estos dos puntos concretos (sombra con tinte rosa,
+   borde de los inputs) necesitan su propio override acá. */
+.landing .auth-card {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.landing .auth-form input {
+  border-color: var(--landing-border);
+}
 
 .landing-header {
   display: flex;

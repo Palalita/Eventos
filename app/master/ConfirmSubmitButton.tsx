@@ -1,0 +1,29 @@
+"use client";
+
+// Botón de submit que pide confirmación antes de disparar la acción del
+// <form> que lo contiene — para acciones irreversibles como borrar un
+// administrador y sus invitados (ver toggleOrganizationStatus, que en
+// cambio es reversible y no necesita esto).
+export default function ConfirmSubmitButton({
+  confirmMessage,
+  className,
+  children,
+}: {
+  confirmMessage: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="submit"
+      className={className}
+      onClick={(event) => {
+        if (!window.confirm(confirmMessage)) {
+          event.preventDefault();
+        }
+      }}
+    >
+      {children}
+    </button>
+  );
+}

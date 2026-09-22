@@ -13,7 +13,7 @@ import LoginForm from "./LoginForm";
 
 export default function LoginPage() {
   return (
-    <main className="auth-page">
+    <main className="auth-page landing">
       <div className="auth-card">
         <div className="auth-back-row">
           <Link href="/" className="auth-back-link">

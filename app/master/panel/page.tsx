@@ -1,13 +1,16 @@
 // Panel de master: lista todas las organizaciones de la plataforma, con
-// quién es su admin, cuántos invitados tiene, y un botón para
+// quién es su admin, cuántos invitados tiene, un botón para
 // activarla/suspenderla (ver toggleOrganizationStatus en
-// app/actions/master.ts). Nada de crear organizaciones a mano acá —eso ya
-// lo cubre /crear-cuenta— ni billing todavía.
+// app/actions/master.ts), y uno para borrar al admin y sus invitados
+// cuando termina el plazo contratado (ver deleteOrganizationAdmin en el
+// mismo archivo). Nada de crear organizaciones a mano acá —eso ya lo
+// cubre /crear-cuenta— ni billing todavía.
 import { requireMaster } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { logout } from "@/app/actions/auth";
-import { toggleOrganizationStatus } from "@/app/actions/master";
+import { toggleOrganizationStatus, deleteOrganizationAdmin } from "@/app/actions/master";
 import { COMPANY_NAME } from "@/lib/company";
+import ConfirmSubmitButton from "../ConfirmSubmitButton";
 
 const fechaFormatter = new Intl.DateTimeFormat("es-GT", { dateStyle: "medium" });
 
@@ -86,7 +89,7 @@ export default async function MasterPanelPage() {
                           <span className="status-badge status-rejected">Suspendida</span>
                         )}
                       </td>
-                      <td>
+                      <td style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                         <form action={toggleOrganizationStatus}>
                           <input type="hidden" name="id" value={org.id} />
                           <button
@@ -96,6 +99,21 @@ export default async function MasterPanelPage() {
                             {org.status === "ACTIVE" ? "Suspender" : "Reactivar"}
                           </button>
                         </form>
+                        {admin && (
+                          <form action={deleteOrganizationAdmin}>
+                            <input type="hidden" name="organizationId" value={org.id} />
+                            <ConfirmSubmitButton
+                              className="btn btn-danger"
+                              confirmMessage={`¿Borrar a ${admin.name} (${admin.email}) y a ${
+                                org._count.users === 1
+                                  ? "1 invitado"
+                                  : `${org._count.users} invitados`
+                              } de "${org.name}"? Esta acción no se puede deshacer.`}
+                            >
+                              Eliminar admin
+                            </ConfirmSubmitButton>
+                          </form>
+                        )}
                       </td>
                     </tr>
                   );

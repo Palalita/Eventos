@@ -60,3 +60,28 @@ export async function toggleOrganizationStatus(formData: FormData) {
 
   revalidatePath("/master/panel");
 }
+
+// Borra al admin de una organización y, con él, a todos los invitados que
+// entraron con sus códigos (todo GUEST de la misma organización — acá no
+// hay más de un admin por organización, así que "invitado por este admin"
+// es lo mismo que "invitado de esta organización"). Pensado para cuando
+// termina el plazo contratado por un cliente y hay que limpiar sus
+// cuentas. No borra la Organization en sí (evento, fotos ya aprobadas,
+// invitaciones) — solo las cuentas de usuario; ver conversación con el
+// usuario. Cada User borrado se lleva en cascada (por la FK) sus propias
+// PhotoRequest/TrustedDevice/DeviceVerification.
+export async function deleteOrganizationAdmin(formData: FormData) {
+  await requireMaster();
+  const organizationId = formData.get("organizationId") as string;
+
+  const admin = await db.user.findFirst({
+    where: { organizationId, role: "ADMIN" },
+    select: { id: true },
+  });
+  if (!admin) return;
+
+  await db.user.deleteMany({ where: { organizationId, role: "GUEST" } });
+  await db.user.delete({ where: { id: admin.id } });
+
+  revalidatePath("/master/panel");
+}

@@ -20,19 +20,19 @@ export const metadata: Metadata = {
 
 const PASOS = [
   {
-    title: "Elegí tu evento y tema",
+    title: "Elija su evento y tema",
     description:
-      "Creá tu cuenta y elegí el diseño que más se ajuste a tu celebración — podés cambiarlo cuando quieras.",
+      "Cree su cuenta y seleccione el diseño que más se ajuste a su celebración — puede cambiarlo cuando lo desee.",
   },
   {
-    title: "Invitá a tus invitados",
+    title: "Invite a sus invitados",
     description:
-      "Cada invitado recibe un código único y su QR para confirmar asistencia, sin imprimir nada.",
+      "Cada invitado recibe un código único y su QR para confirmar asistencia, sin necesidad de imprimir nada.",
   },
   {
-    title: "Administrá todo en un panel",
+    title: "Administre todo desde un panel",
     description:
-      "Revisá confirmaciones, recibí fotos del evento y controlá el acceso desde un solo lugar.",
+      "Revise confirmaciones, reciba fotos del evento y controle el acceso desde un solo lugar.",
   },
 ];
 
@@ -51,7 +51,7 @@ const SERVICIOS = [
   {
     title: "Galería de fotos compartida",
     description:
-      "Tus invitados suben sus fotos y videos del evento; vos decidís cuáles se publican en la galería.",
+      "Sus invitados suben sus fotos y videos del evento; usted decide cuáles se publican en la galería.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -61,9 +61,9 @@ const SERVICIOS = [
     ),
   },
   {
-    title: "Diseño a tu gusto",
+    title: "Diseño a su gusto",
     description:
-      "Elegí la temática de tu sitio (XV años, boda, convivio y más) entre varios diseños ya armados.",
+      "Seleccione la temática de su sitio (XV años, boda, convivio y más) entre varios diseños ya disponibles.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round" />
@@ -76,9 +76,9 @@ const SERVICIOS = [
     ),
   },
   {
-    title: "Proveedores para tu evento",
+    title: "Proveedores para su evento",
     description:
-      "Te conectamos con camarógrafos, decoradores y otros servicios de confianza para completar tu evento.",
+      "Lo conectamos con camarógrafos, decoradores y otros servicios de confianza para completar su evento.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <circle cx="8" cy="8" r="3" />
@@ -122,12 +122,12 @@ export default function LandingPage() {
       <section className="landing-hero-modern">
         <p className="platform-eyebrow">Sitios web para eventos</p>
         <h1 className="landing-hero-modern-title">
-          El sitio de tu evento, listo en minutos
+          El sitio de su evento, listo en minutos
         </h1>
         <p className="landing-hero-modern-subtitle">
           Creamos sitios elegantes para XV años, bodas y todo tipo de
           celebraciones: invitaciones digitales, galería de fotos compartida
-          con tus invitados, y un panel para administrar todo desde un solo
+          con sus invitados, y un panel para administrar todo desde un solo
           lugar.
         </p>
         <div className="landing-hero-modern-actions">
@@ -158,7 +158,7 @@ export default function LandingPage() {
         </section>
 
         <section className="landing-services-modern" aria-labelledby="landing-services-title">
-          <h2 id="landing-services-title">Todo lo que incluye tu sitio</h2>
+          <h2 id="landing-services-title">Todo lo que incluye su sitio</h2>
           <hr className="landing-divider" />
           <ul className="landing-services-modern-grid">
             {SERVICIOS.map((servicio) => (
@@ -173,10 +173,10 @@ export default function LandingPage() {
       </div>
 
       <section className="landing-gallery" aria-labelledby="landing-gallery-title">
-        <h2 id="landing-gallery-title">Así se ve la galería de tu evento</h2>
+        <h2 id="landing-gallery-title">Así se ve la galería de su evento</h2>
         <p className="landing-gallery-subtitle">
-          Fotos de ejemplo — cuando crees tu sitio, acá van a aparecer las
-          que suban tus invitados.
+          Fotos de ejemplo — cuando cree su sitio, aquí aparecerán las que
+          suban sus invitados.
         </p>
         <ul className="landing-gallery-grid">
           {GALERIA_PLACEHOLDER.map((src, index) => (
@@ -190,9 +190,9 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-cta-panel">
-        <h2>¿Ya tenés tu evento con nosotros?</h2>
+        <h2>¿Ya tiene su evento con nosotros?</h2>
         <p className="landing-cta-panel-text">
-          Iniciá sesión para mandar invitaciones y revisar las fotos de tus
+          Inicie sesión para enviar invitaciones y revisar las fotos de sus
           invitados.
         </p>
         <div className="landing-cta-panel-actions">
