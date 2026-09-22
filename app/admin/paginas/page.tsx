@@ -9,8 +9,8 @@ import { updateSiteSections } from "@/app/actions/settings";
 import SaveForm from "@/app/components/SaveForm";
 
 export default async function PaginasPage() {
-  await requireAdmin();
-  const flags = await getSectionFlags();
+  const session = await requireAdmin();
+  const flags = await getSectionFlags(session.organizationId);
 
   return (
     <main className="dashboard">

@@ -7,10 +7,10 @@ import { db } from "@/lib/db";
 import QrScanner from "./QrScanner";
 
 export default async function InvitadosPage() {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   const invitados = await db.user.findMany({
-    where: { role: "GUEST" },
+    where: { organizationId: session.organizationId, role: "GUEST" },
     orderBy: { name: "asc" },
   });
 

@@ -16,7 +16,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { verifySession } from "@/lib/dal";
+import { requireOrgSession } from "@/lib/dal";
 import { getEventSettings, getSectionFlags } from "@/lib/settings";
 import { logout } from "@/app/actions/auth";
 import Countdown from "./components/Countdown";
@@ -45,14 +45,12 @@ const fechaEventoFormatter = new Intl.DateTimeFormat("es-GT", {
 });
 
 export default async function Home() {
-  const session = await verifySession(); // redirige a /login si no hay sesión
+  const session = await requireOrgSession(); // redirige a /login si no hay sesión (u organización)
   const [user, settings, flags] = await Promise.all([
     db.user.findUniqueOrThrow({ where: { id: session.userId } }),
-    getEventSettings(),
-    getSectionFlags(),
+    getEventSettings(session.organizationId),
+    getSectionFlags(session.organizationId),
   ]);
-
-  const fechaFormateada = fechaEventoFormatter.format(settings.fechaEvento);
 
   // Solo se consulta para invitados: es lo que alimenta la campana de
   // notificaciones del header (ver NotificationsBell), que a un admin no le
@@ -60,7 +58,11 @@ export default async function Home() {
   const notifications =
     user.role === "GUEST"
       ? await db.photoRequest.findMany({
-          where: { userId: user.id, status: { not: "PENDING" } },
+          where: {
+            userId: user.id,
+            organizationId: session.organizationId,
+            status: { not: "PENDING" },
+          },
           orderBy: { reviewedAt: "desc" },
           take: 20,
           select: {
@@ -74,6 +76,8 @@ export default async function Home() {
         })
       : [];
 
+  const fechaFormateada = fechaEventoFormatter.format(settings.fechaEvento);
+
   return (
     <main style={user.role === "GUEST" ? { paddingBottom: "5rem" } : undefined}>
       <header className="dashboard-header" style={{ padding: "1.5rem 1.5rem 0" }}>
@@ -81,7 +85,7 @@ export default async function Home() {
           <p className="hero-eyebrow" style={{ fontSize: "1.2rem", margin: 0 }}>
             {settings.lema}
           </p>
-          <h1 style={{ margin: 0 }}>{settings.quinceaneraNombre}</h1>
+          <h1 style={{ margin: 0 }}>{settings.tituloEvento}</h1>
         </div>
         <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
           {user.role === "ADMIN" && (
@@ -120,14 +124,29 @@ export default async function Home() {
             </p>
             <Countdown target={settings.fechaEvento.toISOString()} />
           </section>
-          <AdminHome />
-          <MediaGallery phase="PRE_EVENT" title="Fotos y videos preevento" />
-          <MediaGallery phase="EVENT" title="Fotos y videos del evento" />
+          <AdminHome organizationId={session.organizationId} />
+          <MediaGallery
+            organizationId={session.organizationId}
+            phase="PRE_EVENT"
+            title="Fotos y videos preevento"
+          />
+          <MediaGallery
+            organizationId={session.organizationId}
+            phase="EVENT"
+            title="Fotos y videos del evento"
+          />
         </>
       ) : (
         <>
           <GuestHero settings={settings} fechaFormateada={fechaFormateada} />
-          <GuestHome settings={settings} flags={flags} qrToken={user.qrToken} attended={user.attended} userId={user.id} />
+          <GuestHome
+            organizationId={session.organizationId}
+            settings={settings}
+            flags={flags}
+            qrToken={user.qrToken}
+            attended={user.attended}
+            userId={user.id}
+          />
         </>
       )}
     </main>
@@ -137,22 +156,22 @@ export default async function Home() {
 // Panel que ve el admin debajo del header: contador de pendientes/aprobadas/
 // asistencia, y las dos listas de moderación (PendingList hace el trabajo
 // pesado de aprobar/rechazar, ver app/PendingList.tsx).
-async function AdminHome() {
+async function AdminHome({ organizationId }: { organizationId: string }) {
   const [pendientesPre, pendientesEvento, totalAprobadas, totalInvitados, totalAsistieron] =
     await Promise.all([
       db.photoRequest.findMany({
-        where: { status: "PENDING", phase: "PRE_EVENT" },
+        where: { organizationId, status: "PENDING", phase: "PRE_EVENT" },
         include: { user: true },
         orderBy: { createdAt: "asc" },
       }),
       db.photoRequest.findMany({
-        where: { status: "PENDING", phase: "EVENT" },
+        where: { organizationId, status: "PENDING", phase: "EVENT" },
         include: { user: true },
         orderBy: { createdAt: "asc" },
       }),
-      db.photoRequest.count({ where: { status: "APPROVED" } }),
-      db.user.count({ where: { role: "GUEST" } }),
-      db.user.count({ where: { role: "GUEST", attended: true } }),
+      db.photoRequest.count({ where: { organizationId, status: "APPROVED" } }),
+      db.user.count({ where: { organizationId, role: "GUEST" } }),
+      db.user.count({ where: { organizationId, role: "GUEST", attended: true } }),
     ]);
 
   return (
@@ -210,7 +229,7 @@ function GuestHero({
       <Reveal>
         <div className="hero-polaroid">
           {fotoSrc ? (
-            <HeroPhoto src={fotoSrc} alt={settings.quinceaneraNombre} />
+            <HeroPhoto src={fotoSrc} alt={settings.tituloEvento} />
           ) : (
             <div className="hero-polaroid-placeholder">Mis XV años</div>
           )}
@@ -220,7 +239,7 @@ function GuestHero({
 
       <Reveal delay={150}>
         <div className="hero-name-wrap">
-          <h1 className="hero-name-script">{settings.quinceaneraNombre}</h1>
+          <h1 className="hero-name-script">{settings.tituloEvento}</h1>
           <p className="hero-date">
             {fechaFormateada} · {settings.lugar}
           </p>
@@ -241,12 +260,14 @@ function GuestHero({
 // y lib/settings.ts), más la barra flotante fija abajo con accesos rápidos
 // al QR propio y a subir fotos/videos (cada uno dentro de un ModalButton).
 function GuestHome({
+  organizationId,
   settings,
   flags,
   qrToken,
   attended,
   userId,
 }: {
+  organizationId: string;
   settings: EventSettings;
   flags: SectionFlags;
   qrToken: string;
@@ -258,10 +279,18 @@ function GuestHome({
       {flags.invitacion && <InvitacionSection settings={settings} />}
       {flags.save_the_date && <SaveTheDateSection settings={settings} />}
       {flags.preevento_ver && (
-        <MediaGallery phase="PRE_EVENT" title="Fotos y videos preevento" />
+        <MediaGallery
+          organizationId={organizationId}
+          phase="PRE_EVENT"
+          title="Fotos y videos preevento"
+        />
       )}
       {flags.evento_ver && (
-        <MediaGallery phase="EVENT" title="Fotos y videos del evento" />
+        <MediaGallery
+          organizationId={organizationId}
+          phase="EVENT"
+          title="Fotos y videos del evento"
+        />
       )}
 
       <div className="floating-bar">
@@ -288,7 +317,7 @@ function GuestHome({
             <ModalButton label="Subir preevento" icon="📷">
               <h2>Subir foto o video preevento</h2>
               <UploadForm phase="PRE_EVENT" />
-              <MisEnvios phase="PRE_EVENT" userId={userId} />
+              <MisEnvios organizationId={organizationId} phase="PRE_EVENT" userId={userId} />
             </ModalButton>
           )}
 
@@ -296,7 +325,7 @@ function GuestHome({
             <ModalButton label="Subir del evento" icon="🎥">
               <h2>Subir foto o video del evento</h2>
               <UploadForm phase="EVENT" />
-              <MisEnvios phase="EVENT" userId={userId} />
+              <MisEnvios organizationId={organizationId} phase="EVENT" userId={userId} />
             </ModalButton>
           )}
         </div>
@@ -336,9 +365,17 @@ function SaveTheDateSection({ settings }: { settings: EventSettings }) {
 // MisEnvios() más abajo, que usa la ruta protegida /api/fotos/[id], porque
 // una foto ya APPROVED es pública por definición y no necesita chequeo de
 // permisos.
-async function MediaGallery({ phase, title }: { phase: Phase; title: string }) {
+async function MediaGallery({
+  organizationId,
+  phase,
+  title,
+}: {
+  organizationId: string;
+  phase: Phase;
+  title: string;
+}) {
   const items = await db.photoRequest.findMany({
-    where: { status: "APPROVED", phase },
+    where: { organizationId, status: "APPROVED", phase },
     orderBy: { reviewedAt: "desc" },
     take: 40,
   });
@@ -383,9 +420,17 @@ const MIS_ENVIOS_LIMIT = 8;
 // rechazado) se mueve a la campana de notificaciones del header
 // (NotificationsBell) en vez de quedar acá, para no mezclar "lo que estoy
 // esperando que revisen" con "lo que ya me contestaron".
-async function MisEnvios({ phase, userId }: { phase: Phase; userId: string }) {
+async function MisEnvios({
+  organizationId,
+  phase,
+  userId,
+}: {
+  organizationId: string;
+  phase: Phase;
+  userId: string;
+}) {
   const items = await db.photoRequest.findMany({
-    where: { userId, phase, status: "PENDING" },
+    where: { organizationId, userId, phase, status: "PENDING" },
     orderBy: { createdAt: "desc" },
     take: MIS_ENVIOS_LIMIT,
   });

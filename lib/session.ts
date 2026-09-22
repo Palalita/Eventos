@@ -13,9 +13,12 @@ import { cookies } from "next/headers";
 
 // Lo que va firmado adentro de la cookie: solo el id de usuario y su rol.
 // (No hay contraseña ni datos sensibles acá, solo lo mínimo para identificarlo.)
+// organizationId es null solo para MASTER (no pertenece a ninguna
+// organización) — ver el CHECK constraint en la migración add_organizations.
 export type SessionPayload = {
   userId: string;
-  role: "ADMIN" | "GUEST";
+  role: "MASTER" | "ADMIN" | "GUEST";
+  organizationId: string | null;
 };
 
 // La app no arranca si falta esta variable de entorno: sin ella no hay forma

@@ -23,7 +23,10 @@ export async function GET(
   if (photo.status !== "APPROVED") {
     const session = await getSession();
     const isOwner = session?.userId === photo.userId;
-    const isAdmin = session?.role === "ADMIN";
+    // organizationId también, no solo el rol: sin este chequeo, un admin de
+    // OTRA organización podía ver fotos pendientes/rechazadas de un cliente
+    // ajeno con solo adivinar el id.
+    const isAdmin = session?.role === "ADMIN" && session.organizationId === photo.organizationId;
     if (!isOwner && !isAdmin) {
       return new Response("No autorizado", { status: 403 });
     }

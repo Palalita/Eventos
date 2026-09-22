@@ -72,8 +72,17 @@ export async function signup(_state: SignupFormState, formData: FormData) {
   // resistente a fuerza bruta si la BD se filtra).
   const passwordHash = await bcrypt.hash(password, 10);
 
+  // El invitado hereda la organización de la invitación que usó — el código
+  // (único a nivel de toda la plataforma) es lo que resuelve a qué cliente
+  // pertenece, sin depender de la URL desde la que se registró.
   const user = await db.user.create({
-    data: { name, email, passwordHash, role: "GUEST" },
+    data: {
+      name,
+      email,
+      passwordHash,
+      role: "GUEST",
+      organizationId: invitation.organizationId,
+    },
   });
 
   // Se marca el código como usado para que nadie más pueda registrarse con él.
@@ -82,7 +91,7 @@ export async function signup(_state: SignupFormState, formData: FormData) {
     data: { status: "USED", usedAt: new Date() },
   });
 
-  await createSession({ userId: user.id, role: user.role });
+  await createSession({ userId: user.id, role: user.role, organizationId: user.organizationId });
   redirect("/");
 }
 
@@ -109,8 +118,20 @@ export async function login(_state: LoginFormState, formData: FormData) {
     return { message: "Correo o contraseña incorrectos." };
   }
 
+  // Siempre se corre el bcrypt.compare, incluso para MASTER, antes de
+  // rechazarlo por rol: si el chequeo de rol cortara primero, una cuenta
+  // master respondería más rápido que una normal (sin el costo de bcrypt),
+  // y ese tiempo de respuesta delataría qué correos son cuentas master.
   const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
   if (!passwordsMatch) {
+    return { message: "Correo o contraseña incorrectos." };
+  }
+
+  // MASTER nunca puede loguear desde este formulario público, ni con la
+  // contraseña correcta: por diseño solo entra por /master (ver
+  // masterLogin() en este mismo archivo). Mismo mensaje genérico, para no
+  // revelar que existen cuentas master.
+  if (user.role === "MASTER") {
     return { message: "Correo o contraseña incorrectos." };
   }
 
@@ -127,6 +148,10 @@ export async function login(_state: LoginFormState, formData: FormData) {
       await db.deviceVerification.create({
         data: {
           userId: user.id,
+          // No-null assertion segura: este bloque solo corre para
+          // role === "ADMIN", que el CHECK constraint de la BD garantiza
+          // que siempre tiene organización.
+          organizationId: user.organizationId!,
           tokenHash: hashToken(verificationToken),
           deviceToken,
           expiresAt: new Date(Date.now() + DEVICE_VERIFICATION_MINUTES * 60 * 1000),
@@ -155,7 +180,7 @@ export async function login(_state: LoginFormState, formData: FormData) {
     });
   }
 
-  await createSession({ userId: user.id, role: user.role });
+  await createSession({ userId: user.id, role: user.role, organizationId: user.organizationId });
   redirect("/");
 }
 
@@ -200,6 +225,10 @@ export async function confirmDeviceVerification(formData: FormData) {
     update: { lastSeenAt: new Date() },
     create: {
       userId: user.id,
+      // Solo un ADMIN llega hasta acá (es el único rol que dispara
+      // verificación de dispositivo en login()), así que siempre tiene
+      // organización.
+      organizationId: user.organizationId!,
       tokenHash: hashToken(verification.deviceToken),
       label: "Confirmado por correo",
     },
@@ -209,7 +238,7 @@ export async function confirmDeviceVerification(formData: FormData) {
   await db.deviceVerification.delete({ where: { id: verification.id } });
 
   await setDeviceCookie(verification.deviceToken);
-  await createSession({ userId: user.id, role: user.role });
+  await createSession({ userId: user.id, role: user.role, organizationId: user.organizationId });
 
   redirect("/");
 }

@@ -23,14 +23,7 @@ export default async function InvitacionPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const [user, settings] = await Promise.all([
-    db.user.findUnique({ where: { qrToken: token } }),
-    getEventSettings(),
-  ]);
-  const fechaFormateada = fechaEventoFormatter.format(settings.fechaEvento);
-  const session = await getSession();
-  const isAdmin = session?.role === "ADMIN";
-  const isOwner = session?.userId === user?.id;
+  const user = await db.user.findUnique({ where: { qrToken: token } });
 
   if (!user) {
     return (
@@ -43,11 +36,22 @@ export default async function InvitacionPage({
     );
   }
 
+  // Se piden los datos del evento de la organización DUEÑA de esta
+  // invitación (user.organizationId), no la del que esté viendo la página —
+  // esta es una ruta pública, cualquiera puede abrirla sin sesión.
+  const settings = await getEventSettings(user.organizationId!);
+  const fechaFormateada = fechaEventoFormatter.format(settings.fechaEvento);
+  const session = await getSession();
+  const isOwner = session?.userId === user.id;
+  // También exige misma organización: sin esto, un admin de OTRO cliente de
+  // la plataforma podría confirmar asistencia de un invitado ajeno.
+  const isAdmin = session?.role === "ADMIN" && session.organizationId === user.organizationId;
+
   return (
     <main className="invite-page">
       <div className="invite-card">
         <p className="invite-eyebrow">{settings.lema}</p>
-        <h1>{settings.quinceaneraNombre}</h1>
+        <h1>{settings.tituloEvento}</h1>
         <p className="invite-guest">Invitación de {user.name}</p>
 
         <div className="invite-details">

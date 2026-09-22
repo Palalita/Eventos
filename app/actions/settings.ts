@@ -22,14 +22,17 @@ import {
 // desmarcados ni siquiera aparecen en el FormData, por eso se compara contra
 // "on" en vez de asumir que la clave existe.
 export async function updateSiteSections(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   await Promise.all(
     SITE_SECTIONS.map((section) =>
       db.siteSection.upsert({
-        where: { key: section.key },
+        where: {
+          organizationId_key: { organizationId: session.organizationId, key: section.key },
+        },
         update: { enabled: formData.get(section.key) === "on" },
         create: {
+          organizationId: session.organizationId,
           key: section.key,
           label: section.label,
           enabled: formData.get(section.key) === "on",
@@ -45,9 +48,9 @@ export async function updateSiteSections(formData: FormData) {
 }
 
 export async function updateEventSettings(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
-  const quinceaneraNombre = (formData.get("quinceaneraNombre") as string)?.trim();
+  const tituloEvento = (formData.get("tituloEvento") as string)?.trim();
   const lugar = (formData.get("lugar") as string)?.trim();
   const lema = (formData.get("lema") as string)?.trim();
   const fechaEventoRaw = formData.get("fechaEvento") as string;
@@ -56,7 +59,7 @@ export async function updateEventSettings(formData: FormData) {
 
   // Si faltan los campos obligatorios, se corta en silencio (el formulario ya
   // los marca required en el HTML; esto es un resguardo del lado servidor).
-  if (!quinceaneraNombre || !lugar || !lema || !fechaEventoRaw) {
+  if (!tituloEvento || !lugar || !lema || !fechaEventoRaw) {
     return;
   }
 
@@ -81,9 +84,10 @@ export async function updateEventSettings(formData: FormData) {
       .resize({ width: OPTIMIZED_MAX_WIDTH, withoutEnlargement: true })
       .jpeg({ quality: OPTIMIZED_JPEG_QUALITY })
       .toBuffer();
-    // Mismo nombre de archivo siempre + allowOverwrite: true, así cada foto
-    // principal nueva reemplaza a la anterior en vez de acumular blobs viejos.
-    const blob = await put("settings/foto-principal.jpg", body, {
+    // Mismo nombre de archivo siempre (por organización) + allowOverwrite:
+    // true, así cada foto principal nueva reemplaza a la anterior de ESA
+    // organización en vez de acumular blobs viejos o pisar la de otro cliente.
+    const blob = await put(`settings/${session.organizationId}/foto-principal.jpg`, body, {
       access: "public",
       contentType: "image/jpeg",
       addRandomSuffix: false,
@@ -93,9 +97,9 @@ export async function updateEventSettings(formData: FormData) {
   }
 
   await db.eventSettings.update({
-    where: { id: "singleton" },
+    where: { organizationId: session.organizationId },
     data: {
-      quinceaneraNombre,
+      tituloEvento,
       lugar,
       lema,
       fechaEvento,

@@ -4,10 +4,19 @@
 // Cualquier cambio acá requiere una migración (`npx prisma migrate dev`) —
 // las migraciones ya aplicadas están en prisma/migrations/.
 //
+// Multi-tenant: cada Organization es un evento/cliente independiente (ver
+// prisma/migrations/*_add_organizations para el porqué). Todo lo que un
+// invitado o admin puede tocar cuelga de una Organization vía
+// `organizationId`, puesto directamente en cada tabla (no solo a través de
+// User) para que ninguna query pueda "olvidarse" de filtrar por tenant.
+//
 // Cómo se relacionan los modelos:
-//   User               — cada persona (admin o invitado). El invitado nace
-//                         al usar un código de Invitation (ver signup() en
-//                         app/actions/auth.ts).
+//   Organization       — un evento/cliente. Dueña de todo lo demás.
+//   User               — cada persona (master, admin o invitado). MASTER no
+//                         pertenece a ninguna organización (organizationId
+//                         null); ADMIN/GUEST siempre tienen una. El invitado
+//                         nace al usar un código de Invitation (ver signup()
+//                         en app/actions/auth.ts).
 //   PhotoRequest       — una foto/video subido por un User; pasa por
 //                         PENDING -> APPROVED/REJECTED (ver reviewPhoto()).
 //   TrustedDevice /
@@ -15,8 +24,9 @@
 //                         correo" para los admins (ver lib/device.ts).
 //   Invitation         — códigos de invitación que el admin genera y manda
 //                         por correo antes de que exista el User.
-//   SiteSection        — qué bloques de la home están activados/desactivados.
-//   EventSettings      — una única fila con los datos generales del evento.
+//   SiteSection        — qué bloques de la home están activados/desactivados,
+//                         por organización.
+//   EventSettings      — contenido editable de un evento (1:1 con Organization).
 generator client {
   provider = "prisma-client-js"
 }
@@ -28,8 +38,14 @@ datasource db {
 }
 
 enum Role {
+  MASTER
   ADMIN
   GUEST
+}
+
+enum OrgStatus {
+  ACTIVE
+  SUSPENDED
 }
 
 enum PhotoStatus {
@@ -54,12 +70,38 @@ enum InvitationStatus {
   USED
 }
 
+model Organization {
+  id        String    @id @default(cuid())
+  // Sin uso público por ahora (ver comentario en la migración), pero ya
+  // identifica la organización de forma legible para cuando exista una
+  // página pública por evento.
+  slug      String    @unique
+  name      String
+  // Referencia a un preset de lib/themes.ts — nunca CSS/colores libres.
+  theme     String    @default("xv_rosa_dorado")
+  status    OrgStatus @default(ACTIVE)
+  createdAt DateTime  @default(now())
+
+  users               User[]
+  photoRequests       PhotoRequest[]
+  trustedDevices      TrustedDevice[]
+  deviceVerifications DeviceVerification[]
+  invitations         Invitation[]
+  siteSections        SiteSection[]
+  eventSettings       EventSettings?
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
   passwordHash String
   role         Role     @default(GUEST)
+
+  // Null solo para MASTER; ADMIN/GUEST siempre pertenecen a una organización
+  // (ver el CHECK constraint agregado a mano en la migración).
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String?
 
   // Invitación con QR único para asistir al evento
   qrToken      String    @unique @default(cuid())
@@ -70,12 +112,18 @@ model User {
   trustedDevices      TrustedDevice[]
   deviceVerifications DeviceVerification[]
   createdAt           DateTime @default(now())
+
+  @@index([organizationId])
 }
 
 model PhotoRequest {
-  id            String      @id @default(cuid())
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
   // URL pública en Vercel Blob. Solo se revela al cliente cuando status es
   // APPROVED; en PENDING/REJECTED la privacidad la impone /api/fotos/[id].
   fileUrl       String
@@ -86,59 +134,95 @@ model PhotoRequest {
   adminComment  String?
   createdAt     DateTime    @default(now())
   reviewedAt    DateTime?
+
+  @@index([organizationId])
 }
 
 // Dispositivo desde el que el admin ya confirmó su identidad por correo.
 model TrustedDevice {
-  id         String   @id @default(cuid())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
   tokenHash  String   @unique
   label      String?
   createdAt  DateTime @default(now())
   lastSeenAt DateTime @default(now())
+
+  @@index([organizationId])
 }
 
 // Verificación pendiente por correo cuando el admin entra desde un
 // dispositivo que no está en TrustedDevice.
 model DeviceVerification {
-  id          String   @id @default(cuid())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
   tokenHash   String   @unique
   deviceToken String
   expiresAt   DateTime
   createdAt   DateTime @default(now())
+
+  @@index([organizationId])
 }
 
 // Correo + código que el admin registra de antemano. El invitado necesita
 // este código (enviado por correo) para poder crear su cuenta; así solo
 // quien fue invitado puede entrar al sitio.
 model Invitation {
-  id        String           @id @default(cuid())
-  email     String           @unique
+  id String @id @default(cuid())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  // El código sí sigue siendo único globalmente: es lo que resuelve a qué
+  // organización pertenece una invitación sin depender de la URL (ver
+  // signup() en app/actions/auth.ts). El correo, en cambio, ya no puede ser
+  // único global — la misma persona puede recibir invitaciones de dos
+  // clientes distintos de la plataforma.
+  email     String
   code      String           @unique
   status    InvitationStatus @default(PENDING)
   createdAt DateTime         @default(now())
   usedAt    DateTime?
+
+  @@unique([organizationId, email])
 }
 
-// Activar/desactivar secciones del sitio para los invitados.
+// Activar/desactivar secciones del sitio para los invitados, por organización.
 model SiteSection {
-  key     String  @id
+  id String @id @default(cuid())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  key     String
   label   String
   enabled Boolean @default(true)
+
+  @@unique([organizationId, key])
 }
 
-// Contenido editable del evento (una sola fila).
+// Contenido editable de un evento — 1:1 con Organization (antes era una
+// única fila global con id fijo "singleton").
 model EventSettings {
-  id                String   @id @default("singleton")
-  quinceaneraNombre String
-  fechaEvento       DateTime
-  lugar             String
-  lema              String
-  indicaciones      String   @default("")
-  saveTheDateMensaje String  @default("")
-  fotoPrincipalUrl  String   @default("")
-  updatedAt         DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @id
+
+  // Antes "quinceaneraNombre": ya no todos los eventos son XV años.
+  tituloEvento       String
+  fechaEvento        DateTime
+  lugar              String
+  lema               String
+  indicaciones       String   @default("")
+  saveTheDateMensaje String   @default("")
+  fotoPrincipalUrl   String   @default("")
+  updatedAt          DateTime @updatedAt
 }

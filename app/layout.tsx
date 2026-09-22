@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Alex_Brush, Cormorant, Poppins } from "next/font/google";
 import "./globals.css";
 import { getEventSettings } from "@/lib/settings";
+import { getSession } from "@/lib/session";
 
 // Cada fuente se expone como variable CSS (--font-heading, etc.) en vez de
 // aplicarse directo, para que app/globals.css decida dónde usar cada una.
@@ -37,12 +38,22 @@ const poppins = Poppins({
 
 // Next.js llama a esto para armar el <title>/<meta> de cada página; como lee
 // de la BD, el título del navegador siempre refleja el nombre configurado en
-// app/admin/contenido, sin tener que hardcodearlo.
+// app/admin/contenido, sin tener que hardcodearlo. Este layout envuelve
+// TODAS las rutas, incluidas las públicas (/login, /registro, la futura
+// landing en /) donde no hay sesión ni organización todavía — para esas se
+// usa un título genérico en vez de fallar.
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getEventSettings();
+  const session = await getSession();
+  if (session?.organizationId) {
+    const settings = await getEventSettings(session.organizationId);
+    return {
+      title: `Mis XV años · ${settings.tituloEvento}`,
+      description: "Sitio del evento: invitaciones y galería de fotos.",
+    };
+  }
   return {
-    title: `Mis XV años · ${settings.quinceaneraNombre}`,
-    description: "Sitio del evento: invitaciones y galería de fotos.",
+    title: "Mis XV años",
+    description: "Sitios web para eventos: invitaciones, fotos y más.",
   };
 }
 

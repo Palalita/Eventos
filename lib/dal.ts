@@ -42,5 +42,32 @@ export async function requireAdmin() {
   if (session.role !== "ADMIN") {
     redirect("/");
   }
+  // Invariante garantizada por el CHECK constraint de la BD (ver migración
+  // add_organizations): un ADMIN siempre tiene organizationId. Lo repetimos
+  // acá para que TypeScript angoste el tipo a `string` (no `string | null`)
+  // y el resto del código de admin no tenga que chequearlo de nuevo.
+  return { ...session, organizationId: session.organizationId! };
+}
+
+// Para páginas de invitado/admin que necesitan sesión + organización (todo
+// menos las rutas de MASTER). Igual que requireAdmin pero sin exigir rol.
+export async function requireOrgSession() {
+  const session = await verifySession();
+  if (!session.organizationId) {
+    redirect("/master");
+  }
+  return { ...session, organizationId: session.organizationId! };
+}
+
+// Solo para /master: exige rol MASTER (que nunca tiene organización). Un
+// ADMIN/GUEST que intente entrar se manda al dashboard normal, no a
+// /master, para no insinuar que esa ruta existe.
+// TODO: cuando el dashboard se mude a /panel (paso 3 del plan), actualizar
+// este redirect.
+export async function requireMaster() {
+  const session = await verifySession();
+  if (session.role !== "MASTER") {
+    redirect("/");
+  }
   return session;
 }

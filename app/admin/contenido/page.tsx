@@ -17,8 +17,8 @@ function toDatetimeLocalValue(date: Date) {
 }
 
 export default async function ContenidoPage() {
-  await requireAdmin();
-  const settings = await getEventSettings();
+  const session = await requireAdmin();
+  const settings = await getEventSettings(session.organizationId);
 
   return (
     <main className="dashboard">
@@ -32,11 +32,11 @@ export default async function ContenidoPage() {
       <section className="card">
         <h2>Editar contenido del evento</h2>
         <SaveForm action={updateEventSettings} className="settings-form">
-          <label htmlFor="quinceaneraNombre">Nombre de la quinceañera</label>
+          <label htmlFor="tituloEvento">Título del evento (nombre de la quinceañera, novios, etc.)</label>
           <input
-            id="quinceaneraNombre"
-            name="quinceaneraNombre"
-            defaultValue={settings.quinceaneraNombre}
+            id="tituloEvento"
+            name="tituloEvento"
+            defaultValue={settings.tituloEvento}
             required
           />
 

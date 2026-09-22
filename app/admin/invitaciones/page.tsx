@@ -9,9 +9,10 @@ import InvitationsForm from "./InvitationsForm";
 const fechaFormatter = new Intl.DateTimeFormat("es-GT", { dateStyle: "medium" });
 
 export default async function InvitacionesPage() {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   const invitations = await db.invitation.findMany({
+    where: { organizationId: session.organizationId },
     orderBy: { createdAt: "desc" },
   });
 

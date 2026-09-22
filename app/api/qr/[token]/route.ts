@@ -17,11 +17,12 @@ export async function GET(
     return new Response("No encontrado", { status: 404 });
   }
 
-  // Solo el dueño del QR o un admin pueden verlo — evita que cualquiera con
-  // el link de la invitación de otro pueda descargarse (y reusar) su QR.
+  // Solo el dueño del QR o un admin de la MISMA organización pueden verlo —
+  // evita que cualquiera con el link de la invitación de otro pueda
+  // descargarse (y reusar) su QR, incluyendo un admin de otra organización.
   const session = await getSession();
   const isOwner = session?.userId === user.id;
-  const isAdmin = session?.role === "ADMIN";
+  const isAdmin = session?.role === "ADMIN" && session.organizationId === user.organizationId;
   if (!isOwner && !isAdmin) {
     return new Response("No autorizado", { status: 403 });
   }

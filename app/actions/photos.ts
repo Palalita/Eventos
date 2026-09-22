@@ -16,7 +16,7 @@ import sharp from "sharp";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { verifySession, requireAdmin } from "@/lib/dal";
+import { requireOrgSession, requireAdmin } from "@/lib/dal";
 import {
   ALLOWED_MIME_TYPES,
   MAX_IMAGE_SIZE_BYTES,
@@ -41,7 +41,7 @@ export async function uploadPhoto(
   _state: UploadPhotoState,
   formData: FormData
 ): Promise<UploadPhotoState> {
-  const session = await verifySession(); // tiene que haber alguien logueado
+  const session = await requireOrgSession(); // tiene que haber alguien logueado con organización
 
   const file = formData.get("foto");
   const description = (formData.get("descripcion") as string | null)?.trim() || null;
@@ -105,6 +105,7 @@ export async function uploadPhoto(
       data: {
         id: photoId,
         userId: session.userId,
+        organizationId: session.organizationId,
         fileUrl: blob.url,
         mediaType: video ? "VIDEO" : "PHOTO",
         phase,
@@ -129,7 +130,7 @@ export async function createUploadedVideoRequest(input: {
   phase: "PRE_EVENT" | "EVENT";
   description: string | null;
 }) {
-  const session = await verifySession();
+  const session = await requireOrgSession();
 
   // El navegador es quien decide el nombre del archivo al subirlo
   // directamente a Blob (ver app/api/upload/route.ts), así que acá se
@@ -143,6 +144,7 @@ export async function createUploadedVideoRequest(input: {
     data: {
       id: input.photoId,
       userId: session.userId,
+      organizationId: session.organizationId,
       fileUrl: input.fileUrl,
       mediaType: "VIDEO",
       phase: input.phase,
@@ -158,16 +160,21 @@ export async function createUploadedVideoRequest(input: {
 // carpeta en Blob ("pending/" -> "approved/" o "rejected/") y actualiza el
 // estado en la BD.
 export async function reviewPhoto(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   const id = formData.get("id") as string;
   const decision = formData.get("decision") as "APPROVED" | "REJECTED";
   const adminComment = (formData.get("comentario") as string | null)?.trim() || null;
 
-  const photo = await db.photoRequest.findUnique({ where: { id } });
+  // findFirst con organizationId (no findUnique solo por id): sin este
+  // filtro, un admin podría aprobar/rechazar fotos de OTRA organización
+  // simplemente adivinando o reusando un id de PhotoRequest ajeno.
+  const photo = await db.photoRequest.findFirst({
+    where: { id, organizationId: session.organizationId },
+  });
   if (!photo || photo.status !== "PENDING") {
-    // Ya fue revisada (o no existe): no hacemos nada, evita doble-procesar
-    // si el admin hace doble clic o recarga.
+    // Ya fue revisada, no existe, o es de otra organización: no hacemos
+    // nada, evita doble-procesar si el admin hace doble clic o recarga.
     return;
   }
 
@@ -194,10 +201,15 @@ export async function reviewPhoto(formData: FormData) {
 // (app/invitacion/[token]/page.tsx), cuando el admin confirma "a mano" en
 // persona en vez de escanear el QR.
 export async function checkInGuest(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const qrToken = formData.get("qrToken") as string;
 
-  const user = await db.user.findUnique({ where: { qrToken } });
+  // findFirst con organizationId: un QR es un token aleatorio único, pero
+  // sin este filtro un admin podría marcar asistencia de un invitado de
+  // OTRA organización si de alguna forma llegara a conocer/probar su token.
+  const user = await db.user.findFirst({
+    where: { qrToken, organizationId: session.organizationId },
+  });
   if (!user) {
     redirect("/admin/invitados?error=no-encontrado");
   }
@@ -221,9 +233,11 @@ export type CheckInResult =
   | { status: "not_found" };
 
 export async function checkInByToken(qrToken: string): Promise<CheckInResult> {
-  await requireAdmin();
+  const session = await requireAdmin();
 
-  const user = await db.user.findUnique({ where: { qrToken } });
+  const user = await db.user.findFirst({
+    where: { qrToken, organizationId: session.organizationId },
+  });
   if (!user) {
     return { status: "not_found" };
   }

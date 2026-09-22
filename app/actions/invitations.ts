@@ -42,14 +42,14 @@ export async function sendInvitations(
   _state: SendInvitationsState,
   formData: FormData
 ): Promise<SendInvitationsState> {
-  await requireAdmin(); // corta acá si no sos admin logueado
+  const session = await requireAdmin(); // corta acá si no sos admin logueado
 
   const emails = parseEmails((formData.get("emails") as string | null) ?? "");
   if (emails.length === 0) {
     return { created: 0, skipped: [], failedToSend: [] };
   }
 
-  const settings = await getEventSettings();
+  const settings = await getEventSettings(session.organizationId);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
   const skipped: string[] = [];
@@ -60,21 +60,28 @@ export async function sendInvitations(
   // "existing" antes de crear — con pocos correos por tanda el costo es
   // insignificante.
   for (const email of emails) {
-    const existing = await db.invitation.findUnique({ where: { email } });
+    // El correo ya no es único a nivel de toda la plataforma (otro cliente
+    // puede haber invitado a la misma persona), solo dentro de esta
+    // organización.
+    const existing = await db.invitation.findUnique({
+      where: { organizationId_email: { organizationId: session.organizationId, email } },
+    });
     if (existing) {
       skipped.push(email);
       continue;
     }
 
     const code = generateInvitationCode();
-    await db.invitation.create({ data: { email, code } });
+    await db.invitation.create({
+      data: { email, code, organizationId: session.organizationId },
+    });
     created++;
 
     try {
       await sendInvitationEmail(
         email,
         code,
-        settings.quinceaneraNombre,
+        settings.tituloEvento,
         `${baseUrl}/registro?code=${code}`
       );
     } catch {
@@ -93,19 +100,24 @@ export async function sendInvitations(
 }
 
 export async function resendInvitation(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const id = formData.get("id") as string;
 
-  const invitation = await db.invitation.findUnique({ where: { id } });
+  // findFirst con organizationId: sin este filtro, un admin podría reenviar
+  // (y por lo tanto ver el correo/código de) una invitación de OTRA
+  // organización con solo adivinar/probar un id.
+  const invitation = await db.invitation.findFirst({
+    where: { id, organizationId: session.organizationId },
+  });
   if (!invitation || invitation.status !== "PENDING") return;
 
-  const settings = await getEventSettings();
+  const settings = await getEventSettings(session.organizationId);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
   await sendInvitationEmail(
     invitation.email,
     invitation.code,
-    settings.quinceaneraNombre,
+    settings.tituloEvento,
     `${baseUrl}/registro?code=${invitation.code}`
   );
 
@@ -113,11 +125,14 @@ export async function resendInvitation(formData: FormData) {
 }
 
 export async function revokeInvitation(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const id = formData.get("id") as string;
 
-  // deleteMany (no delete) porque además filtra por status: PENDING, así
-  // nunca se puede borrar una invitación que ya se usó para crear una cuenta.
-  await db.invitation.deleteMany({ where: { id, status: "PENDING" } });
+  // deleteMany (no delete) porque además filtra por status: PENDING (nunca
+  // se puede borrar una invitación ya usada) y por organizationId (un admin
+  // no puede revocar invitaciones de otra organización).
+  await db.invitation.deleteMany({
+    where: { id, status: "PENDING", organizationId: session.organizationId },
+  });
   revalidatePath("/admin/invitaciones");
 }
