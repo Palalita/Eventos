@@ -6,7 +6,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY_NAME } from "@/lib/company";
-import { THEMES } from "@/lib/themes";
 
 // Metadata propia (no la genérica del layout raíz — ver
 // app/layout.tsx#generateMetadata): esta es la única página realmente
@@ -159,24 +158,6 @@ export default function LandingPage() {
           </ul>
         </section>
       </div>
-
-      <section className="landing-themes" aria-labelledby="landing-themes-title">
-        <h2 id="landing-themes-title">Elegí el estilo de tu evento</h2>
-        <hr className="landing-divider" />
-        <ul className="landing-themes-grid">
-          {THEMES.map((theme) => (
-            <li key={theme.id} className="landing-theme-card">
-              <div className="landing-theme-swatches" aria-hidden="true">
-                {theme.preview.map((color, index) => (
-                  <span key={index} style={{ background: color }} />
-                ))}
-              </div>
-              <h3>{theme.label}</h3>
-              <p>{theme.description}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       <section className="landing-cta-panel">
         <h2>¿Ya tenés tu evento con nosotros?</h2>

@@ -33,7 +33,8 @@
   --gradient-mid: #fdeef2;
 }
 
-/* Segundo tema disponible al crear un evento (ver lib/themes.ts). */
+/* Resto de los temas disponibles al crear un evento — ver lib/themes.ts
+   para el nombre/descripción de cada uno; acá solo la paleta. */
 .theme-boda_salvia {
   --rose: #7d9678;
   --rose-dark: #445940;
@@ -41,6 +42,78 @@
   --gold: #c2a878;
   --cream: #faf9f5;
   --gradient-mid: #eef1e8;
+}
+.theme-bautizo_celeste {
+  --rose: #6fa8c9;
+  --rose-dark: #2d5f7c;
+  --rose-light: #d8e9f2;
+  --gold: #c9b98a;
+  --cream: #f8fbfd;
+  --gradient-mid: #eaf3f8;
+}
+.theme-comunion_lavanda {
+  --rose: #a496c4;
+  --rose-dark: #5c4b82;
+  --rose-light: #e6dff2;
+  --gold: #cbbf9a;
+  --cream: #faf8fc;
+  --gradient-mid: #f1ecf7;
+}
+.theme-baby_shower_durazno {
+  --rose: #e8a87c;
+  --rose-dark: #b3652f;
+  --rose-light: #f6ddc8;
+  --gold: #8fb9a8;
+  --cream: #fdf9f5;
+  --gradient-mid: #f7ede3;
+}
+.theme-cumpleanos_coral {
+  --rose: #ef6f61;
+  --rose-dark: #a83b2f;
+  --rose-light: #fbd9d3;
+  --gold: #3fa9a0;
+  --cream: #fffaf8;
+  --gradient-mid: #fdeeea;
+}
+.theme-graduacion_marino {
+  --rose: #2d4a73;
+  --rose-dark: #16263d;
+  --rose-light: #d4ddea;
+  --gold: #c9a227;
+  --cream: #f7f8fa;
+  --gradient-mid: #ebeef3;
+}
+.theme-aniversario_vino {
+  --rose: #7a2e3d;
+  --rose-dark: #4a1620;
+  --rose-light: #e8d3d7;
+  --gold: #cdb079;
+  --cream: #fbf7f2;
+  --gradient-mid: #f3e7e4;
+}
+.theme-compromiso_blush {
+  --rose: #dba0a8;
+  --rose-dark: #96525b;
+  --rose-light: #f5e2e4;
+  --gold: #c9ae7c;
+  --cream: #fdf9f7;
+  --gradient-mid: #f8ecec;
+}
+.theme-corporativo_acero {
+  --rose: #4c6b82;
+  --rose-dark: #263849;
+  --rose-light: #dbe3e9;
+  --gold: #8a8f94;
+  --cream: #f7f8f9;
+  --gradient-mid: #eceef0;
+}
+.theme-convivio_terracota {
+  --rose: #c17a4f;
+  --rose-dark: #7a4527;
+  --rose-light: #ecd7c5;
+  --gold: #8a9a5b;
+  --cream: #fdf9f4;
+  --gradient-mid: #f5ede2;
 }
 
 * {
@@ -1442,59 +1515,6 @@ a {
 }
 @media (max-width: 520px) {
   .landing-services-modern-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.landing-themes {
-  max-width: 1100px;
-  margin: 0 auto 2rem;
-  padding: 1rem 1.5rem 3rem;
-  text-align: center;
-}
-.landing-themes h2 {
-  margin-bottom: 0.9rem;
-}
-.landing-themes-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  text-align: left;
-}
-.landing-theme-card {
-  background: white;
-  border-radius: 1.25rem;
-  padding: 1.5rem;
-}
-.landing-theme-swatches {
-  display: flex;
-  gap: 0.4rem;
-  margin-bottom: 1rem;
-}
-.landing-theme-swatches span {
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 999px;
-  display: block;
-}
-.landing-theme-card h3 {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--landing-ink);
-  margin: 0 0 0.4rem;
-}
-.landing-theme-card p {
-  font-size: 0.88rem;
-  opacity: 0.72;
-  margin: 0;
-  line-height: 1.55;
-}
-@media (max-width: 640px) {
-  .landing-themes-grid {
     grid-template-columns: 1fr;
   }
 }
