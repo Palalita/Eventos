@@ -49,7 +49,7 @@ const SERVICIOS = [
 
 export default function LandingPage() {
   return (
-    <main>
+    <main className="landing">
       <header className="landing-header">
         <Link href="/" className="landing-brand">
           {COMPANY_NAME}
