@@ -5,12 +5,18 @@
 // cuando termina el plazo contratado (ver deleteOrganizationAdmin en el
 // mismo archivo). Nada de crear organizaciones a mano acá —eso ya lo
 // cubre /crear-cuenta— ni billing todavía.
+import type { Metadata } from "next";
 import { requireMaster } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { logout } from "@/app/actions/auth";
 import { toggleOrganizationStatus, deleteOrganizationAdmin } from "@/app/actions/master";
 import { COMPANY_NAME } from "@/lib/company";
 import ConfirmSubmitButton from "../ConfirmSubmitButton";
+
+export const metadata: Metadata = {
+  title: `Panel interno · ${COMPANY_NAME}`,
+  robots: { index: false, follow: false },
+};
 
 const fechaFormatter = new Intl.DateTimeFormat("es-GT", { dateStyle: "medium" });
 

@@ -7,9 +7,15 @@
 // la URL), así que el texto es genérico de la plataforma, no el lema de un
 // evento puntual.
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY_NAME } from "@/lib/company";
 import LoginForm from "./LoginForm";
+
+export const metadata: Metadata = {
+  title: `Iniciar sesión · ${COMPANY_NAME}`,
+  description: "Inicia sesión para administrar tu evento.",
+};
 
 export default function LoginPage() {
   return (
