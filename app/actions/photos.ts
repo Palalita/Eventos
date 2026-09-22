@@ -65,43 +65,57 @@ export async function uploadPhoto(
   }
 
   const photoId = randomUUID();
-  let contentType = file.type;
-  let body: Buffer;
 
-  if (video) {
-    // Los videos no se recomprimen (requeriría un transcodificador aparte);
-    // se suben tal cual, respetando el límite de tamaño.
-    body = Buffer.from(await file.arrayBuffer());
-  } else {
-    // Recodificar a JPEG y limitar el ancho estira mucho el 1GB gratis de
-    // Blob frente a fotos de celular sin comprimir (varios MB cada una).
-    body = await sharp(Buffer.from(await file.arrayBuffer()))
-      .rotate() // corrige la orientación EXIF (fotos de celular "acostadas")
-      .resize({ width: OPTIMIZED_MAX_WIDTH, withoutEnlargement: true })
-      .jpeg({ quality: OPTIMIZED_JPEG_QUALITY })
-      .toBuffer();
-    contentType = "image/jpeg";
+  // Todo lo que sigue puede fallar de formas que no controlamos (imagen
+  // corrupta que sharp no puede procesar, Blob caído, DB sin conexión). Sin
+  // este try/catch, un fallo así tira una excepción sin capturar: el cliente
+  // (ver UploadForm.tsx) espera que esta acción SIEMPRE resuelva un
+  // UploadPhotoState — si en cambio la promesa rechaza, su guarda contra
+  // doble envío (isSubmittingRef) queda trabada en `true` para siempre,
+  // porque nunca llega un nuevo estado que la resetee.
+  try {
+    let contentType = file.type;
+    let body: Buffer;
+
+    if (video) {
+      // Los videos no se recomprimen (requeriría un transcodificador aparte);
+      // se suben tal cual, respetando el límite de tamaño.
+      body = Buffer.from(await file.arrayBuffer());
+    } else {
+      // Recodificar a JPEG y limitar el ancho estira mucho el 1GB gratis de
+      // Blob frente a fotos de celular sin comprimir (varios MB cada una).
+      body = await sharp(Buffer.from(await file.arrayBuffer()))
+        .rotate() // corrige la orientación EXIF (fotos de celular "acostadas")
+        .resize({ width: OPTIMIZED_MAX_WIDTH, withoutEnlargement: true })
+        .jpeg({ quality: OPTIMIZED_JPEG_QUALITY })
+        .toBuffer();
+      contentType = "image/jpeg";
+    }
+
+    // `put` sube el archivo a Vercel Blob y devuelve su URL pública. Toda
+    // foto nueva arranca en la carpeta "pending/" hasta que el admin la
+    // revise.
+    const blob = await put(
+      `${statusFolder("PENDING")}/${photoId}.${extensionFor(contentType)}`,
+      body,
+      { access: "public", contentType, addRandomSuffix: false }
+    );
+
+    await db.photoRequest.create({
+      data: {
+        id: photoId,
+        userId: session.userId,
+        fileUrl: blob.url,
+        mediaType: video ? "VIDEO" : "PHOTO",
+        phase,
+        description,
+        status: "PENDING",
+      },
+    });
+  } catch (error) {
+    console.error(`[uploadPhoto] Falló la subida para el usuario ${session.userId}:`, error);
+    return { error: "No se pudo subir el archivo. Intentá de nuevo." };
   }
-
-  // `put` sube el archivo a Vercel Blob y devuelve su URL pública. Toda foto
-  // nueva arranca en la carpeta "pending/" hasta que el admin la revise.
-  const blob = await put(
-    `${statusFolder("PENDING")}/${photoId}.${extensionFor(contentType)}`,
-    body,
-    { access: "public", contentType, addRandomSuffix: false }
-  );
-
-  await db.photoRequest.create({
-    data: {
-      id: photoId,
-      userId: session.userId,
-      fileUrl: blob.url,
-      mediaType: video ? "VIDEO" : "PHOTO",
-      phase,
-      description,
-      status: "PENDING",
-    },
-  });
 
   revalidatePath("/"); // para que la galería/lista de pendientes se actualice
   return { success: true };

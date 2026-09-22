@@ -70,10 +70,6 @@ export default function UploadForm({
 
     isSubmittingRef.current = true;
 
-    const description =
-      (form?.elements.namedItem("descripcion") as HTMLInputElement | null)?.value.trim() ||
-      null;
-
     // Las fotos siguen su flujo normal (Server Action con recompresión).
     // Los videos van directo navegador -> Vercel Blob: son varias veces más
     // rápido que subirlos primero a nuestro servidor y de ahí a Blob.
@@ -87,6 +83,14 @@ export default function UploadForm({
       formAction(formData);
       return;
     }
+
+    // A diferencia del camino de foto (que arma su propio FormData del DOM
+    // más arriba), acá sí hace falta leer la descripción a mano: se llama a
+    // createUploadedVideoRequest() con argumentos sueltos, no con un
+    // FormData. Se lee antes del form?.reset() de abajo.
+    const description =
+      (form?.elements.namedItem("descripcion") as HTMLInputElement | null)?.value.trim() ||
+      null;
 
     setVideoState(undefined);
     setVideoPending(true);
