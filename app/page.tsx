@@ -3,12 +3,23 @@
 // A diferencia de app/panel/page.tsx (el sitio de UN evento), esta página no
 // requiere sesión ni sabe nada de ninguna organización en particular — ver
 // proxy.ts, que ya no protege "/".
+import type { Metadata } from "next";
 import Link from "next/link";
 
 // Nombre de la empresa: un solo lugar para cambiarlo. "Eventos" es un
 // placeholder (viene del nombre del repo); reemplazar por el nombre real
 // del negocio cuando se defina.
 const COMPANY_NAME = "Eventos";
+
+// Metadata propia (no la genérica del layout raíz — ver
+// app/layout.tsx#generateMetadata): esta es la única página realmente
+// pública/indexable del sitio, así que vale la pena que tenga su propio
+// título y descripción para buscadores y al compartir el link.
+export const metadata: Metadata = {
+  title: `${COMPANY_NAME} · Sitios web para eventos`,
+  description:
+    "Creamos sitios elegantes para XV años, bodas y todo tipo de celebraciones: invitaciones digitales, galería de fotos compartida y un panel para administrar todo.",
+};
 
 const SERVICIOS = [
   {
