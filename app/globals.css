@@ -1191,7 +1191,13 @@ a {
   white-space: nowrap;
 }
 
-/* --- Landing pública de la empresa (app/page.tsx) --- */
+/* --- Landing pública de la empresa (app/page.tsx) ---
+   Look distinto al resto del sitio a propósito (ver charla con el
+   usuario): bloques blancos de esquinas muy redondeadas flotando sobre el
+   fondo crema, tipografía de título en la sans (--font-body) en vez de la
+   serif de los temas de evento, botones sólidos en vez de la paleta
+   rosa/dorado de un tema de cliente. Sigue usando las variables de marca
+   (--rose-dark, --gold, --cream) para no bifurcar la paleta. */
 .landing-header {
   display: flex;
   justify-content: space-between;
@@ -1203,8 +1209,6 @@ a {
   margin: 0 auto;
 }
 .landing-brand {
-  /* Serif en negrita, no la cursiva de .invite-eyebrow: es la marca de la
-     empresa, no la de un evento de cliente. */
   font-family: var(--font-heading);
   font-weight: 700;
   font-size: 1.5rem;
@@ -1217,52 +1221,6 @@ a {
   gap: 0.6rem;
   flex-wrap: wrap;
 }
-.landing-hero {
-  min-height: auto;
-  padding: 2.5rem 1.5rem 3rem;
-}
-.landing-hero-title {
-  max-width: 620px;
-}
-.landing-hero-subtitle {
-  max-width: 520px;
-  font-size: 1.05rem;
-}
-.landing-services {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1rem 1.5rem 3rem;
-}
-.landing-services h2 {
-  text-align: center;
-  margin-bottom: 1.8rem;
-}
-.landing-services-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.2rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.service-card {
-  margin: 0;
-}
-.service-icon {
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
-}
-.service-card p {
-  font-size: 0.92rem;
-  margin: 0;
-}
-.landing-cta-text {
-  font-family: var(--font-body);
-  font-style: normal;
-}
-.landing-cta-action {
-  margin-top: 0.8rem;
-}
 @media (max-width: 380px) {
   /* Nombre + 2 botones no entran cómodos en una fila en celulares chicos;
      que el nombre ocupe su propia línea evita que los botones se aprieten
@@ -1271,4 +1229,189 @@ a {
     justify-content: center;
     text-align: center;
   }
+}
+
+.landing-hero-modern {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 3.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.landing-hero-modern-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--rose-dark);
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.15;
+  margin: 0;
+  max-width: 640px;
+}
+.landing-hero-modern-subtitle {
+  font-size: 1.08rem;
+  color: var(--text);
+  opacity: 0.72;
+  max-width: 520px;
+  margin: 0;
+}
+.landing-hero-modern-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.landing-hero-modern-link {
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.landing-hero-modern-link:hover {
+  border-bottom-color: currentColor;
+}
+
+/* El "panel" grande de esquinas redondeadas que agrupa la franja de
+   highlights y la sección de servicios — es lo que le da al landing el
+   aire de bloques apilados de la referencia, sin depender de una
+   animación de scroll frágil. */
+.landing-panel {
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+  background: white;
+  border-radius: 2rem;
+  overflow: hidden;
+}
+
+.landing-highlights {
+  padding: 1.6rem 1.5rem;
+  border-bottom: 1px solid rgba(22, 63, 55, 0.08);
+}
+.landing-highlights-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem 2rem;
+}
+.landing-highlights-list li {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.55;
+  white-space: nowrap;
+}
+
+.landing-services-modern {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+.landing-services-modern h2 {
+  margin-bottom: 0.9rem;
+}
+.landing-divider {
+  width: 48px;
+  height: 2px;
+  background: var(--gold);
+  margin: 0 auto 2.5rem;
+  border: none;
+}
+.landing-services-modern-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+.landing-services-modern-grid li {
+  padding-top: 1.1rem;
+  border-top: 1px solid rgba(22, 63, 55, 0.12);
+}
+.landing-services-modern-grid h3 {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--rose-dark);
+  margin: 0 0 0.4rem;
+}
+.landing-services-modern-grid p {
+  font-size: 0.88rem;
+  opacity: 0.72;
+  margin: 0;
+  line-height: 1.55;
+}
+@media (max-width: 860px) {
+  .landing-services-modern-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .landing-services-modern-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.landing-cta-panel {
+  max-width: 1100px;
+  margin: 0 auto 3rem;
+  background: var(--rose-dark);
+  border-radius: 2rem;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+  color: white;
+}
+.landing-cta-panel h2 {
+  color: white;
+  margin-bottom: 0.6rem;
+}
+.landing-cta-panel-text {
+  color: white;
+  opacity: 0.78;
+  max-width: 460px;
+  margin: 0 auto;
+}
+.landing-cta-panel-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1.6rem;
+}
+.btn-invert-primary {
+  background: white;
+  color: var(--rose-dark);
+}
+.btn-invert-primary:hover {
+  background: var(--cream);
+}
+.btn-invert-outline {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.btn-invert-outline:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.landing-footer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  border-top: 1px solid rgba(22, 63, 55, 0.1);
+  font-size: 0.85rem;
+  opacity: 0.6;
 }

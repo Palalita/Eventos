@@ -17,27 +17,30 @@ export const metadata: Metadata = {
     "Creamos sitios elegantes para XV años, bodas y todo tipo de celebraciones: invitaciones digitales, galería de fotos compartida y un panel para administrar todo.",
 };
 
+const HIGHLIGHTS = [
+  "Código de invitación único",
+  "Galería compartida",
+  "Panel de administración",
+  "Temas para elegir",
+];
+
 const SERVICIOS = [
   {
-    icon: "💌",
     title: "Invitaciones digitales",
     description:
       "Cada invitado recibe su propio código y QR — sin imprimir nada, sin perder el control de quién confirmó.",
   },
   {
-    icon: "📷",
     title: "Galería de fotos compartida",
     description:
       "Tus invitados suben sus fotos y videos del evento; vos decidís cuáles se publican en la galería.",
   },
   {
-    icon: "🎨",
     title: "Diseño a tu gusto",
     description:
       "Elegí la temática de tu sitio (XV años, boda, convivio y más) entre varios diseños ya armados.",
   },
   {
-    icon: "🤝",
     title: "Proveedores para tu evento",
     description:
       "Te conectamos con camarógrafos, decoradores y otros servicios de confianza para completar tu evento.",
@@ -61,50 +64,71 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      <section className="hero landing-hero">
+      <section className="landing-hero-modern">
         <p className="platform-eyebrow">Sitios web para eventos</p>
-        <h1 className="landing-hero-title">El sitio de tu evento, listo en minutos</h1>
-        <p className="landing-hero-subtitle">
+        <h1 className="landing-hero-modern-title">
+          El sitio de tu evento, listo en minutos
+        </h1>
+        <p className="landing-hero-modern-subtitle">
           Creamos sitios elegantes para XV años, bodas y todo tipo de
           celebraciones: invitaciones digitales, galería de fotos compartida
           con tus invitados, y un panel para administrar todo desde un solo
           lugar.
         </p>
-        <div className="hero-actions">
+        <div className="landing-hero-modern-actions">
           <Link href="/crear-cuenta" className="btn btn-primary">
             Crear mi evento
           </Link>
-          <Link href="/login" className="btn btn-secondary">
+          <Link href="/login" className="landing-hero-modern-link">
             Ya tengo una cuenta
           </Link>
         </div>
       </section>
 
-      <section className="landing-services" aria-labelledby="landing-services-title">
-        <h2 id="landing-services-title">Qué incluye</h2>
-        <ul className="landing-services-grid">
-          {SERVICIOS.map((servicio) => (
-            <li key={servicio.title} className="card service-card">
-              <div className="service-icon" aria-hidden="true">
-                {servicio.icon}
-              </div>
-              <h3>{servicio.title}</h3>
-              <p>{servicio.description}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="landing-panel">
+        <div className="landing-highlights">
+          <ul className="landing-highlights-list">
+            {HIGHLIGHTS.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
 
-      <section className="content-section">
+        <section className="landing-services-modern" aria-labelledby="landing-services-title">
+          <h2 id="landing-services-title">Todo lo que incluye tu sitio</h2>
+          <hr className="landing-divider" />
+          <ul className="landing-services-modern-grid">
+            {SERVICIOS.map((servicio) => (
+              <li key={servicio.title}>
+                <h3>{servicio.title}</h3>
+                <p>{servicio.description}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <section className="landing-cta-panel">
         <h2>¿Ya tenés tu evento con nosotros?</h2>
-        <p className="landing-cta-text">
+        <p className="landing-cta-panel-text">
           Iniciá sesión para mandar invitaciones y revisar las fotos de tus
           invitados.
         </p>
-        <Link href="/login" className="btn btn-primary landing-cta-action">
-          Iniciar sesión
-        </Link>
+        <div className="landing-cta-panel-actions">
+          <Link href="/login" className="btn btn-invert-primary">
+            Iniciar sesión
+          </Link>
+          <Link href="/crear-cuenta" className="btn btn-invert-outline">
+            Crear mi evento
+          </Link>
+        </div>
       </section>
+
+      <footer className="landing-footer">
+        <span>
+          © {new Date().getFullYear()} {COMPANY_NAME}
+        </span>
+      </footer>
     </main>
   );
 }
