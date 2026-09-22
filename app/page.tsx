@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY_NAME } from "@/lib/company";
+import Reveal from "./Reveal";
 
 // Metadata propia (no la genérica del layout raíz — ver
 // app/layout.tsx#generateMetadata): esta es la única página realmente
@@ -89,6 +90,18 @@ const SERVICIOS = [
   },
 ];
 
+// Imágenes de prueba (placeholder) para mostrar cómo se va a ver la
+// galería mientras no tenemos fotos reales de eventos — seeds fijos
+// (no random) para que no cambien en cada carga.
+const GALERIA_PLACEHOLDER = [
+  "https://picsum.photos/seed/evento-plataforma-1/500/500",
+  "https://picsum.photos/seed/evento-plataforma-2/500/500",
+  "https://picsum.photos/seed/evento-plataforma-3/500/500",
+  "https://picsum.photos/seed/evento-plataforma-4/500/500",
+  "https://picsum.photos/seed/evento-plataforma-5/500/500",
+  "https://picsum.photos/seed/evento-plataforma-6/500/500",
+];
+
 export default function LandingPage() {
   return (
     <main className="landing">
@@ -158,6 +171,23 @@ export default function LandingPage() {
           </ul>
         </section>
       </div>
+
+      <section className="landing-gallery" aria-labelledby="landing-gallery-title">
+        <h2 id="landing-gallery-title">Así se ve la galería de tu evento</h2>
+        <p className="landing-gallery-subtitle">
+          Fotos de ejemplo — cuando crees tu sitio, acá van a aparecer las
+          que suban tus invitados.
+        </p>
+        <ul className="landing-gallery-grid">
+          {GALERIA_PLACEHOLDER.map((src, index) => (
+            <li key={src}>
+              <Reveal delayMs={(index % 3) * 100}>
+                <img src={src} alt="" width={500} height={500} loading="lazy" />
+              </Reveal>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="landing-cta-panel">
         <h2>¿Ya tenés tu evento con nosotros?</h2>

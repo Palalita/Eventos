@@ -65,11 +65,20 @@ const fraunces = Fraunces({
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   if (session?.organizationId) {
-    const settings = await getEventSettings(session.organizationId);
-    return {
-      title: `${settings.tituloEvento} · ${COMPANY_NAME}`,
-      description: "Sitio del evento: invitaciones y galería de fotos.",
-    };
+    // La sesión puede sobrevivir a su organización (la borró un MASTER,
+    // por ejemplo) — getEventSettings() intenta crear la fila si falta,
+    // y esa escritura viola la foreign key si la organización ya no
+    // existe. Sin este try/catch, cualquier página (no solo /panel, que
+    // si valida la sesión en proxy.ts) tira 500 para ese visitante.
+    try {
+      const settings = await getEventSettings(session.organizationId);
+      return {
+        title: `${settings.tituloEvento} · ${COMPANY_NAME}`,
+        description: "Sitio del evento: invitaciones y galería de fotos.",
+      };
+    } catch (error) {
+      console.error("layout: no se pudo leer EventSettings de la sesión", error);
+    }
   }
   return {
     title: COMPANY_NAME,

@@ -1579,6 +1579,58 @@ a {
 .landing-hero-modern-link:hover {
   border-bottom-color: currentColor;
 }
+/* Entrada escalonada del hero al cargar la página (no depende de scroll,
+   por eso es animación CSS simple en vez de Reveal/IntersectionObserver
+   como el resto de las imágenes de la landing, más abajo). */
+.landing-hero-modern > * {
+  animation: landing-hero-in 0.6s ease both;
+}
+.landing-hero-modern > *:nth-child(1) {
+  animation-delay: 0s;
+}
+.landing-hero-modern > *:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.landing-hero-modern > *:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.landing-hero-modern > *:nth-child(4) {
+  animation-delay: 0.24s;
+}
+@keyframes landing-hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero-modern > * {
+    animation: none;
+  }
+}
+
+/* Fade + slide-up al entrar en el viewport (ver app/Reveal.tsx). Sin JS
+   se queda visible (.reveal solo, sin --visible, nunca se renderiza). */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}
 
 /* El "panel" grande de esquinas redondeadas que agrupa "cómo funciona" y
    los servicios — es lo que le da al landing el aire de bloques apilados
@@ -1702,6 +1754,46 @@ a {
 @media (max-width: 520px) {
   .landing-services-modern-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.landing-gallery {
+  max-width: 1100px;
+  margin: 0 auto 3rem;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+.landing-gallery h2 {
+  margin-bottom: 0.9rem;
+}
+.landing-gallery-subtitle {
+  max-width: 480px;
+  margin: -0.5rem auto 2rem;
+  opacity: 0.72;
+  font-size: 0.95rem;
+}
+.landing-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.landing-gallery-grid .reveal {
+  height: 100%;
+}
+.landing-gallery-grid img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 1.25rem;
+}
+@media (max-width: 640px) {
+  .landing-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
