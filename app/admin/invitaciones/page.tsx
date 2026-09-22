@@ -20,7 +20,7 @@ export default async function InvitacionesPage() {
     <main className="dashboard">
       <header className="dashboard-header">
         <h1>Invitaciones</h1>
-        <Link href="/" className="btn btn-ghost">
+        <Link href="/panel" className="btn btn-ghost">
           ← Volver al inicio
         </Link>
       </header>

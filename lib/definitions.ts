@@ -35,6 +35,33 @@ export type SignupFormState =
     }
   | undefined;
 
+// /crear-cuenta: un cliente nuevo da de alta su propia organización (evento)
+// y su cuenta de admin en un solo formulario. Usado por
+// app/actions/organizations.ts#createOrganization.
+export const CreateOrganizationFormSchema = z.object({
+  eventName: z
+    .string()
+    .min(2, { error: "Ponele un nombre a tu evento (mínimo 2 caracteres)." })
+    .trim(),
+  name: z.string().min(2, { error: "El nombre debe tener al menos 2 caracteres." }).trim(),
+  email: z.email({ error: "Ingresa un correo válido." }).trim(),
+  password: z
+    .string()
+    .min(6, { error: "La contraseña debe tener al menos 6 caracteres." }),
+});
+
+export type CreateOrganizationFormState =
+  | {
+      errors?: {
+        eventName?: string[];
+        name?: string[];
+        email?: string[];
+        password?: string[];
+      };
+      message?: string;
+    }
+  | undefined;
+
 export const LoginFormSchema = z.object({
   email: z.email({ error: "Ingresa un correo válido." }).trim(),
   password: z.string().min(1, { error: "La contraseña es requerida." }),

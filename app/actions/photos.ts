@@ -118,7 +118,7 @@ export async function uploadPhoto(
     return { error: "No se pudo subir el archivo. Intentá de nuevo." };
   }
 
-  revalidatePath("/"); // para que la galería/lista de pendientes se actualice
+  revalidatePath("/panel"); // para que la galería/lista de pendientes se actualice
   return { success: true };
 }
 
@@ -153,7 +153,7 @@ export async function createUploadedVideoRequest(input: {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/panel");
 }
 
 // El admin aprueba o rechaza una foto/video pendiente: mueve el archivo de
@@ -194,7 +194,7 @@ export async function reviewPhoto(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/panel");
 }
 
 // Marca la asistencia de un invitado desde su propia página de invitación

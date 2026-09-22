@@ -92,7 +92,7 @@ export async function signup(_state: SignupFormState, formData: FormData) {
   });
 
   await createSession({ userId: user.id, role: user.role, organizationId: user.organizationId });
-  redirect("/");
+  redirect("/panel");
 }
 
 // Valida email + contraseña. Si el usuario es ADMIN y el navegador no es uno
@@ -181,7 +181,7 @@ export async function login(_state: LoginFormState, formData: FormData) {
   }
 
   await createSession({ userId: user.id, role: user.role, organizationId: user.organizationId });
-  redirect("/");
+  redirect("/panel");
 }
 
 export async function logout() {
@@ -240,5 +240,5 @@ export async function confirmDeviceVerification(formData: FormData) {
   await setDeviceCookie(verification.deviceToken);
   await createSession({ userId: user.id, role: user.role, organizationId: user.organizationId });
 
-  redirect("/");
+  redirect("/panel");
 }

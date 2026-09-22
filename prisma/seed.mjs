@@ -1,9 +1,9 @@
 // Script que se corre a mano (`npm run seed`) para dejar la base de datos
-// lista después de crear las tablas con Prisma: crea el usuario admin
-// inicial (si le pasás las variables de entorno), y las filas base de
-// SiteSection/EventSettings que el resto del sitio espera que ya existan
-// (ver lib/settings.ts, que si no las encuentra las crea con valores vacíos).
-// No corre solo — hay que ejecutarlo manualmente cada vez que hace falta.
+// lista con UNA organización de desarrollo: su Organization, sus filas base
+// de SiteSection/EventSettings, y opcionalmente su admin inicial. No corre
+// solo — hay que ejecutarlo manualmente cada vez que hace falta. En
+// producción las organizaciones se crean vía /crear-cuenta
+// (lib/organizations.ts#provisionOrganization), no con este script.
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -11,6 +11,8 @@ const db = new PrismaClient();
 
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
+const ORG_SLUG = process.env.SEED_ORG_SLUG || "valentina-xv";
+const ORG_NAME = process.env.SEED_ORG_NAME || "Valentina";
 
 // Debe coincidir con lib/site-sections.ts
 const SITE_SECTIONS = [
@@ -23,6 +25,13 @@ const SITE_SECTIONS = [
 ];
 
 async function main() {
+  const organization = await db.organization.upsert({
+    where: { slug: ORG_SLUG },
+    update: {},
+    create: { slug: ORG_SLUG, name: ORG_NAME },
+  });
+  console.log(`Organización lista: ${organization.name} (${organization.slug})`);
+
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
     console.warn(
       "Faltan SEED_ADMIN_EMAIL y/o SEED_ADMIN_PASSWORD: me salteo la creación del admin (sin un valor por defecto, para no dejar una contraseña conocida por cualquiera). Definilas en .env si necesitás que el seed cree uno."
@@ -37,6 +46,7 @@ async function main() {
           email: ADMIN_EMAIL,
           passwordHash,
           role: "ADMIN",
+          organizationId: organization.id,
         },
       });
       console.log(`Admin creado: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
@@ -47,19 +57,24 @@ async function main() {
 
   for (const section of SITE_SECTIONS) {
     await db.siteSection.upsert({
-      where: { key: section.key },
+      where: { organizationId_key: { organizationId: organization.id, key: section.key } },
       update: {},
-      create: { key: section.key, label: section.label, enabled: true },
+      create: {
+        organizationId: organization.id,
+        key: section.key,
+        label: section.label,
+        enabled: true,
+      },
     });
   }
   console.log(`Secciones del sitio listas (${SITE_SECTIONS.length})`);
 
   await db.eventSettings.upsert({
-    where: { id: "singleton" },
+    where: { organizationId: organization.id },
     update: {},
     create: {
-      id: "singleton",
-      quinceaneraNombre: "Valentina",
+      organizationId: organization.id,
+      tituloEvento: ORG_NAME,
       fechaEvento: new Date("2026-12-12T19:00:00-06:00"),
       lugar: "Salón Jardines del Bosque, Ciudad de Guatemala",
       lema: "Mis XV años",

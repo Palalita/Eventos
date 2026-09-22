@@ -20,7 +20,7 @@ export default async function DispositivosPage() {
     <main className="dashboard">
       <header className="dashboard-header">
         <h1>Dispositivos aprobados</h1>
-        <Link href="/" className="btn btn-ghost">
+        <Link href="/panel" className="btn btn-ghost">
           ← Volver al inicio
         </Link>
       </header>

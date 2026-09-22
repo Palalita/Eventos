@@ -1,9 +1,10 @@
-// "Data Access Layer": las dos funciones que usan las páginas para
-// protegerse. Son la puerta de entrada — cualquier página que empiece
-// llamando a verifySession() o requireAdmin() garantiza que, si el código
-// sigue ejecutándose después, hay un usuario real logueado (y admin, en el
-// segundo caso). Las usan `app/page.tsx` (verifySession) y todas las páginas
-// bajo `app/admin/*` (requireAdmin).
+// "Data Access Layer": las funciones que usan las páginas para protegerse.
+// Son la puerta de entrada — cualquier página que empiece llamando a
+// verifySession()/requireOrgSession()/requireAdmin()/requireMaster()
+// garantiza que, si el código sigue ejecutándose después, hay un usuario
+// real logueado (con organización, o admin, o master, según cuál se use).
+// Las usan `app/panel/page.tsx` (requireOrgSession), todas las páginas bajo
+// `app/admin/*` (requireAdmin), y `app/master/*` (requireMaster).
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
@@ -36,11 +37,11 @@ export const verifySession = cache(async () => {
 });
 
 // Igual que verifySession(), pero además exige rol ADMIN; si un GUEST
-// intenta entrar a una página de admin, lo manda de vuelta al inicio.
+// intenta entrar a una página de admin, lo manda de vuelta a su panel.
 export async function requireAdmin() {
   const session = await verifySession();
   if (session.role !== "ADMIN") {
-    redirect("/");
+    redirect("/panel");
   }
   // Invariante garantizada por el CHECK constraint de la BD (ver migración
   // add_organizations): un ADMIN siempre tiene organizationId. Lo repetimos
@@ -60,14 +61,12 @@ export async function requireOrgSession() {
 }
 
 // Solo para /master: exige rol MASTER (que nunca tiene organización). Un
-// ADMIN/GUEST que intente entrar se manda al dashboard normal, no a
+// ADMIN/GUEST que intente entrar se manda a su panel normal, no de vuelta a
 // /master, para no insinuar que esa ruta existe.
-// TODO: cuando el dashboard se mude a /panel (paso 3 del plan), actualizar
-// este redirect.
 export async function requireMaster() {
   const session = await verifySession();
   if (session.role !== "MASTER") {
-    redirect("/");
+    redirect("/panel");
   }
   return session;
 }

@@ -24,7 +24,7 @@ export default async function ContenidoPage() {
     <main className="dashboard">
       <header className="dashboard-header">
         <h1>Invitación, indicaciones y Save the Date</h1>
-        <Link href="/" className="btn btn-ghost">
+        <Link href="/panel" className="btn btn-ghost">
           ← Volver al inicio
         </Link>
       </header>

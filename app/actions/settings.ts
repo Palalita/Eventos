@@ -41,9 +41,10 @@ export async function updateSiteSections(formData: FormData) {
     )
   );
 
-  // Se revalidan ambas: la home (que lee getSectionFlags) y la propia
-  // página de admin (para que el checkbox recién guardado quede reflejado).
-  revalidatePath("/");
+  // Se revalidan ambas: el panel del evento (que lee getSectionFlags) y la
+  // propia página de admin (para que el checkbox recién guardado quede
+  // reflejado).
+  revalidatePath("/panel");
   revalidatePath("/admin/paginas");
 }
 
@@ -109,10 +110,11 @@ export async function updateEventSettings(formData: FormData) {
     },
   });
 
-  // Se revalidan todas las páginas que muestran estos datos.
-  revalidatePath("/");
+  // Se revalidan todas las páginas que muestran estos datos. /login ya no
+  // lee EventSettings (ver app/login/page.tsx), así que no hace falta
+  // revalidarla.
+  revalidatePath("/panel");
   revalidatePath("/admin/contenido");
-  revalidatePath("/login");
   revalidatePath("/registro");
 }
 
