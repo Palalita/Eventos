@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function MasterLoginPage() {
   return (
-    <main className="auth-page">
+    <main className="auth-page landing">
       <div className="auth-card">
         <div className="auth-back-row">
           <Link href="/" className="auth-back-link">

@@ -1490,14 +1490,27 @@ a {
 .landing .btn-ghost:hover {
   background: rgba(23, 24, 26, 0.06);
 }
-/* /login usa .auth-card/.auth-form (compartidos con /crear-cuenta,
-   /registro, /master) directo, sin pasar por ninguna clase propia de la
-   landing — así que estos dos puntos concretos (sombra con tinte rosa,
-   borde de los inputs) necesitan su propio override acá. */
+/* /login y /master (login) usan .auth-card/.auth-form (compartidos con
+   /crear-cuenta, /registro) directo, sin pasar por ninguna clase propia
+   de la landing — así que estos dos puntos concretos (sombra con tinte
+   rosa, borde de los inputs) necesitan su propio override acá. */
 .landing .auth-card {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 .landing .auth-form input {
+  border-color: var(--landing-border);
+}
+/* /master/panel usa .dashboard/.card/.device-table/.btn-secondary
+   (compartidos con /admin/*) — mismo motivo que arriba, tres puntos
+   concretos con tinte rosa que .landing todavía no cubría. */
+.landing .card {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+.landing .device-table th,
+.landing .device-table td {
+  border-bottom-color: var(--landing-border);
+}
+.landing .btn-secondary {
   border-color: var(--landing-border);
 }
 

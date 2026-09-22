@@ -36,7 +36,7 @@ export default async function MasterPanelPage() {
   });
 
   return (
-    <main className="dashboard">
+    <main className="dashboard landing">
       <header className="dashboard-header">
         <h1>{COMPANY_NAME} · Organizaciones</h1>
         <form action={logout}>
