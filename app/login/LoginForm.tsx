@@ -15,7 +15,7 @@
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { login, getOrgBrandingForEmail } from "@/app/actions/auth";
+import { login, getOrgBrandingForEmail, chooseLoginAccount } from "@/app/actions/auth";
 import { COMPANY_NAME } from "@/lib/company";
 
 // Mensajes para el ?device=... que agrega app/verificar-dispositivo/page.tsx
@@ -74,7 +74,10 @@ export default function LoginForm() {
     .filter(Boolean)
     .join(" ");
 
-  if (state?.pendingDeviceVerification) {
+  // El flag puede venir del state de login() (recién enviado el form) o de
+  // ?device=pendiente (redirigido desde chooseLoginAccount(), que no usa
+  // useActionState — ver el comentario en esa Server Action).
+  if (state?.pendingDeviceVerification || deviceError === "pendiente") {
     return (
       <main className={mainClassName}>
         <div className="auth-card">
@@ -84,6 +87,35 @@ export default function LoginForm() {
               correo con un enlace para confirmar que eres tú — ábrelo desde
               este mismo dispositivo para completar el inicio de sesión.
             </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // El mismo correo+contraseña coincide con más de una cuenta (ver el
+  // comentario en login(), app/actions/auth.ts) — hay que preguntar a cuál
+  // entrar en vez de elegir una al azar.
+  if (state?.multipleAccounts) {
+    return (
+      <main className={mainClassName}>
+        <div className="auth-card">
+          <p className="platform-eyebrow">{COMPANY_NAME}</p>
+          <h1>¿A cuál evento querés entrar?</h1>
+          <p className="auth-subtitle">Ese correo y contraseña coinciden con más de una cuenta.</p>
+
+          <div className="auth-account-picker">
+            {state.multipleAccounts.map((account) => (
+              <form action={chooseLoginAccount} key={account.userId}>
+                <input type="hidden" name="userId" value={account.userId} />
+                <button type="submit" className="auth-account-option">
+                  <span className="auth-account-name">{account.organizationName}</span>
+                  <span className="auth-account-role">
+                    {account.role === "ADMIN" ? "Administrador" : "Invitado"}
+                  </span>
+                </button>
+              </form>
+            ))}
           </div>
         </div>
       </main>

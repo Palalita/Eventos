@@ -742,6 +742,41 @@ a {
   font-size: 0.85rem;
   text-align: center;
 }
+/* Selector de "¿a cuál evento querés entrar?" (LoginForm.tsx) — un correo
+   con más de una cuenta (mismo correo Y contraseña en dos organizaciones
+   distintas). Cada opción es su propio <form> de un solo campo oculto. */
+.auth-account-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+}
+.auth-account-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--rose-light);
+  background: white;
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+.auth-account-option:hover {
+  border-color: var(--rose);
+}
+.auth-account-name {
+  font-weight: 600;
+}
+.auth-account-role {
+  font-size: 0.78rem;
+  color: var(--rose);
+  opacity: 0.8;
+}
 .auth-back-row {
   /* .auth-card centra todo su texto; este link necesita quedar pegado a
      la izquierda en su propia fila, arriba del resto. */
@@ -1664,6 +1699,16 @@ a {
 }
 .landing .auth-subtitle {
   color: var(--landing-muted);
+}
+.landing .auth-account-option {
+  border-color: var(--landing-border);
+}
+.landing .auth-account-option:hover {
+  border-color: var(--landing-ink);
+}
+.landing .auth-account-role {
+  color: var(--landing-muted);
+  opacity: 1;
 }
 /* /master/panel usa .dashboard/.card/.device-table/.btn-secondary
    (compartidos con /admin/*) — mismo motivo que arriba, tres puntos

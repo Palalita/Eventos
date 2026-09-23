@@ -87,3 +87,49 @@ export async function deleteSession() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
 }
+
+// Cookie temporal (5 min) para el paso intermedio de login() cuando un
+// correo tiene más de una cuenta (ver app/actions/auth.ts): ya se verificó
+// la contraseña contra CADA una de estas cuentas en esa misma llamada, así
+// que acá solo se recuerda CUÁLES son válidas para que
+// chooseLoginAccount() pueda confiar en el id que el usuario elija sin
+// tener que pedir la contraseña de nuevo — nunca se guarda la contraseña
+// en sí, ni acá ni en ningún lado.
+export type PendingLoginPayload = {
+  userIds: string[];
+};
+
+const PENDING_LOGIN_COOKIE = "pending_login";
+
+export async function createPendingLoginCookie(payload: PendingLoginPayload) {
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("5m")
+    .sign(encodedKey);
+  const cookieStore = await cookies();
+  cookieStore.set(PENDING_LOGIN_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 5 * 60,
+    sameSite: "lax",
+    path: "/",
+  });
+}
+
+export async function getPendingLogin(): Promise<PendingLoginPayload | null> {
+  const cookieStore = await cookies();
+  const cookie = cookieStore.get(PENDING_LOGIN_COOKIE)?.value;
+  if (!cookie) return null;
+  try {
+    const { payload } = await jwtVerify(cookie, encodedKey, { algorithms: ["HS256"] });
+    return payload as unknown as PendingLoginPayload;
+  } catch {
+    return null;
+  }
+}
+
+export async function deletePendingLoginCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(PENDING_LOGIN_COOKIE);
+}

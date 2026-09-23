@@ -377,23 +377,29 @@ function StepFonts({
 // React (el navegador no deja setear su value por seguridad), así que solo
 // se guarda el nombre elegido para mostrarlo — el archivo en sí viaja tal
 // cual está en el DOM al momento del submit, no por estado.
+//
+// `fotoName` es estado LOCAL de este componente (no del wizard entero) a
+// propósito: si viviera en CreateOrgForm, sobreviviría a que el usuario
+// vuelva al paso 4 y avance de nuevo al 5 — pero el <input type="file"> en
+// sí SÍ se remonta vacío en ese caso (el navegador nunca deja restaurar un
+// archivo elegido), así que el mensaje "Seleccionaste: x.jpg" mentía: la
+// foto ya no estaba, pero el aviso seguía ahí. Al vivir acá, se resetea
+// junto con el input real cada vez que el paso se remonta.
 function StepDetails({
   state,
   pending,
   lema,
   setLema,
-  fotoName,
-  setFotoName,
   onBack,
 }: {
   state: CreateOrganizationFormState;
   pending: boolean;
   lema: string;
   setLema: (v: string) => void;
-  fotoName: string | null;
-  setFotoName: (v: string | null) => void;
   onBack: () => void;
 }) {
+  const [fotoName, setFotoName] = useState<string | null>(null);
+
   return (
     <div className="wizard-step" key="step-5" data-step-content="5">
       <p className="wizard-step-hint">
@@ -447,7 +453,6 @@ export default function CreateOrgForm() {
   const [theme, setTheme] = useState(DEFAULT_THEME);
   const [font, setFont] = useState(DEFAULT_FONT);
   const [lema, setLema] = useState("");
-  const [fotoName, setFotoName] = useState<string | null>(null);
 
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -567,8 +572,6 @@ export default function CreateOrgForm() {
           pending={pending}
           lema={lema}
           setLema={setLema}
-          fotoName={fotoName}
-          setFotoName={setFotoName}
           onBack={() => setStep(4)}
         />
       )}

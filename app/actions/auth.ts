@@ -13,9 +13,16 @@
 
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
+import type { User } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { createSession, deleteSession } from "@/lib/session";
+import {
+  createSession,
+  deleteSession,
+  createPendingLoginCookie,
+  getPendingLogin,
+  deletePendingLoginCookie,
+} from "@/lib/session";
 import { getOrCreateDeviceToken, hashToken, setDeviceCookie } from "@/lib/device";
 import { sendDeviceVerificationEmail } from "@/lib/email";
 import { getEventSettings } from "@/lib/settings";
@@ -104,52 +111,10 @@ export async function signup(_state: SignupFormState, formData: FormData) {
   redirect("/panel");
 }
 
-// Valida email + contraseña. Si el usuario es ADMIN y el navegador no es uno
-// ya confiable, en vez de loguear manda un correo de verificación y corta
-// acá (ver confirmDeviceVerification más abajo, que es la que realmente abre
-// la sesión en ese caso).
-export async function login(_state: LoginFormState, formData: FormData) {
-  const validatedFields = LoginFormSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
-
-  if (!validatedFields.success) {
-    return { errors: validatedFields.error.flatten().fieldErrors };
-  }
-
-  const { email, password } = validatedFields.data;
-
-  // El correo ya no identifica una sola cuenta (puede haber una por
-  // organización — ver prisma/schema.prisma#User), así que se prueba la
-  // contraseña contra cada cuenta que comparta este correo y se entra a la
-  // primera que coincida. Si dos cuentas del mismo correo llegaran a tener
-  // también la misma contraseña (poco común — cada organización tiene la
-  // suya, elegida por separado), entra a la que aparezca primero; no hay
-  // forma de que el usuario elija cuál sin un selector de organización, que
-  // queda fuera de alcance por ahora.
-  const candidates = await db.user.findMany({ where: { email } });
-  let user: (typeof candidates)[number] | null = null;
-  for (const candidate of candidates) {
-    if (await bcrypt.compare(password, candidate.passwordHash)) {
-      user = candidate;
-      break;
-    }
-  }
-  if (!user) {
-    // Mensaje genérico a propósito: no decimos "el correo no existe" para no
-    // ayudar a alguien a adivinar qué correos están registrados.
-    return { message: "Correo o contraseña incorrectos." };
-  }
-
-  // MASTER nunca puede loguear desde este formulario público, ni con la
-  // contraseña correcta: por diseño solo entra por /master (ver
-  // masterLogin() en este mismo archivo). Mismo mensaje genérico, para no
-  // revelar que existen cuentas master.
-  if (user.role === "MASTER") {
-    return { message: "Correo o contraseña incorrectos." };
-  }
-
+// Compartida entre login() (cuando el correo+contraseña resuelve a una sola
+// cuenta) y chooseLoginAccount() (cuando la persona eligió una entre varias):
+// pide verificación de dispositivo si hace falta, o abre la sesión directo.
+async function finishLogin(user: User): Promise<LoginFormState> {
   if (user.role === "ADMIN") {
     const deviceToken = await getOrCreateDeviceToken();
     const trusted = await db.trustedDevice.findUnique({
@@ -197,6 +162,103 @@ export async function login(_state: LoginFormState, formData: FormData) {
 
   await createSession({ userId: user.id, role: user.role, organizationId: user.organizationId });
   redirect("/panel");
+}
+
+// Valida email + contraseña. Si el usuario es ADMIN y el navegador no es uno
+// ya confiable, en vez de loguear manda un correo de verificación y corta
+// acá (ver confirmDeviceVerification más abajo, que es la que realmente abre
+// la sesión en ese caso).
+export async function login(_state: LoginFormState, formData: FormData) {
+  const validatedFields = LoginFormSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!validatedFields.success) {
+    return { errors: validatedFields.error.flatten().fieldErrors };
+  }
+
+  const { email, password } = validatedFields.data;
+
+  // El correo ya no identifica una sola cuenta (puede haber una por
+  // organización — ver prisma/schema.prisma#User), así que se prueba la
+  // contraseña contra CADA cuenta que comparta este correo (no se corta en
+  // la primera que coincide, a propósito: hace falta saber si hay más de
+  // una para poder ofrecer el selector más abajo). MASTER nunca entra por
+  // acá (por diseño solo por /master, ver masterLogin()), pero sí se le
+  // corre el mismo bcrypt.compare — si no, un correo que solo tiene cuenta
+  // master respondería más rápido que uno con una cuenta real, y ese tiempo
+  // de respuesta delataría que existen cuentas master.
+  const candidates = await db.user.findMany({ where: { email } });
+  const matches: User[] = [];
+  for (const candidate of candidates) {
+    const passwordMatches = await bcrypt.compare(password, candidate.passwordHash);
+    if (passwordMatches && candidate.role !== "MASTER") {
+      matches.push(candidate);
+    }
+  }
+
+  if (matches.length === 0) {
+    // Mensaje genérico a propósito: no decimos "el correo no existe" para no
+    // ayudar a alguien a adivinar qué correos están registrados.
+    return { message: "Correo o contraseña incorrectos." };
+  }
+
+  if (matches.length > 1) {
+    // Ya se verificó la contraseña contra cada una de estas cuentas acá
+    // arriba — la cookie solo recuerda CUÁLES para que chooseLoginAccount()
+    // no tenga que pedirla de nuevo (y nunca la guarda a ella misma).
+    await createPendingLoginCookie({ userIds: matches.map((m) => m.id) });
+    const multipleAccounts = await Promise.all(
+      matches.map(async (m) => {
+        const organization = await db.organization.findUnique({
+          where: { id: m.organizationId! },
+          select: { name: true },
+        });
+        return {
+          userId: m.id,
+          organizationName: organization?.name ?? "Evento",
+          role: m.role as "ADMIN" | "GUEST",
+        };
+      })
+    );
+    return { multipleAccounts };
+  }
+
+  return finishLogin(matches[0]);
+}
+
+// Dispara desde el selector "¿A cuál evento querés entrar?" que LoginForm.tsx
+// muestra cuando login() encuentra más de una cuenta — un <form> simple por
+// cuenta, sin useActionState (como resendInvitation/revokeTrustedDevice).
+// No vuelve a pedir la contraseña: confía en la cookie de
+// createPendingLoginCookie(), que ya demostró que ESTE navegador la escribió
+// bien para el id elegido (y para ningún otro) hace menos de 5 minutos.
+export async function chooseLoginAccount(formData: FormData) {
+  const userId = formData.get("userId");
+  const pending = await getPendingLogin();
+  if (typeof userId !== "string" || !pending || !pending.userIds.includes(userId)) {
+    redirect("/login?device=invalido");
+  }
+
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    redirect("/login?device=invalido");
+  }
+
+  // Un solo uso: no queremos que este mismo enlace/cookie sirva para volver
+  // a elegir cuenta después de ya haber entrado a una.
+  await deletePendingLoginCookie();
+
+  const result = await finishLogin(user);
+  // finishLogin() ya redirige a /panel en el caso normal; solo vuelve acá
+  // cuando hace falta verificación de dispositivo (ADMIN, navegador nuevo).
+  // Esta Server Action no usa useActionState (es un <form> suelto), así que
+  // no hay dónde mostrar ese `result` — se manda por query param, mismo
+  // patrón que ?device=expirado/invalido, y LoginForm.tsx lo interpreta.
+  if (result?.pendingDeviceVerification) {
+    redirect("/login?device=pendiente");
+  }
 }
 
 // Resuelve el tema/tipografía/lema del evento del invitado (o admin) dueño

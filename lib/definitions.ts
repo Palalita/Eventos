@@ -87,5 +87,14 @@ export type LoginFormState =
       // confianza: login() ya mandó el correo de verificación y LoginForm.tsx
       // muestra un aviso de "revisá tu correo" en vez de redirigir.
       pendingDeviceVerification?: boolean;
+      // Presente cuando ese correo+contraseña coinciden con MÁS de una
+      // cuenta (la misma persona tiene eventos distintos con el mismo
+      // correo Y la misma contraseña) — LoginForm.tsx muestra un selector
+      // en vez de entrar directo a cualquiera de las dos al azar.
+      multipleAccounts?: {
+        userId: string;
+        organizationName: string;
+        role: "ADMIN" | "GUEST";
+      }[];
     }
   | undefined;
