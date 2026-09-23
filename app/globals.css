@@ -1565,6 +1565,9 @@ a {
 .landing .auth-form input {
   border-color: var(--landing-border);
 }
+.landing .auth-subtitle {
+  color: var(--landing-muted);
+}
 /* /master/panel usa .dashboard/.card/.device-table/.btn-secondary
    (compartidos con /admin/*) — mismo motivo que arriba, tres puntos
    concretos con tinte rosa que .landing todavía no cubría. */
@@ -1577,6 +1580,33 @@ a {
 }
 .landing .btn-secondary {
   border-color: var(--landing-border);
+}
+/* /crear-cuenta usa .wizard-progress-* y .theme-option-* (ver
+   app/crear-cuenta/CreateOrgForm.tsx) — mismo motivo que arriba, estos
+   puntos con tinte rosa/dorado de :root son la identidad de LA
+   PLATAFORMA, no la del tema de evento que el visitante todavía está
+   por elegir (ese sí se ve, real, en .wizard-preview más abajo). */
+.landing .wizard-progress-step {
+  color: var(--landing-ink);
+}
+.landing .wizard-progress-dot {
+  border-color: var(--landing-border);
+}
+.landing .wizard-progress-step[data-active="true"] .wizard-progress-dot {
+  border-color: var(--landing-ink);
+  background: var(--landing-ink);
+}
+.landing .wizard-progress-connector {
+  background: var(--landing-border);
+}
+.landing .theme-option-label {
+  border-color: var(--landing-border);
+}
+.landing .theme-option-input:checked + .theme-option-label {
+  border-color: var(--landing-ink);
+}
+.landing .theme-option-input:focus-visible + .theme-option-label {
+  outline-color: var(--landing-ink);
 }
 
 .landing-header {

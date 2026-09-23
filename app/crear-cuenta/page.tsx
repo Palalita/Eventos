@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function CrearCuentaPage() {
   return (
-    <main className="auth-page">
+    <main className="auth-page landing">
       <div className="auth-card auth-card--wide">
         <div className="auth-back-row">
           <Link href="/" className="auth-back-link">
