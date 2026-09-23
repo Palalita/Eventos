@@ -49,6 +49,12 @@ export async function provisionOrganization(input: {
   eventName: string;
   theme?: string;
   font?: string;
+  // Opcionales: si el cliente ya escribió un mensaje de bienvenida en
+  // /crear-cuenta, se guarda de una vez. La foto principal NO entra acá —
+  // necesita el id de la organización para su nombre de archivo en Blob
+  // (ver createOrganization en app/actions/organizations.ts), así que esa
+  // se sube después y se actualiza con un segundo `update`.
+  lema?: string;
 }) {
   const slug = await generateUniqueSlug(input.eventName);
 
@@ -67,7 +73,7 @@ export async function provisionOrganization(input: {
       tituloEvento: input.eventName,
       fechaEvento: new Date(),
       lugar: "",
-      lema: "",
+      lema: input.lema ?? "",
     },
   });
 

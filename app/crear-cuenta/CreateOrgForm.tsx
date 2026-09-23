@@ -1,16 +1,16 @@
 "use client";
 
-// Formulario de /crear-cuenta, armado como wizard de 3 pasos (datos →
-// colores → tipografía) para darle más espacio a cada decisión de diseño
-// en vez de amontonar todo en un solo formulario largo. Sigue siendo UN
-// solo <form> con una sola Server Action (createOrganization,
-// app/actions/organizations.ts): los 3 pasos solo controlan qué se
-// muestra, no dividen el envío. Por eso cada campo es controlado (useState)
-// en vez de dejar que el DOM guarde el valor — así, al cambiar de paso
-// (que remonta el contenido para poder animarlo con @keyframes en
+// Formulario de /crear-cuenta, armado como wizard de 4 pasos (datos →
+// colores → tipografía → detalles) para darle más espacio a cada decisión
+// de diseño en vez de amontonar todo en un solo formulario largo. Sigue
+// siendo UN solo <form> con una sola Server Action (createOrganization,
+// app/actions/organizations.ts): los pasos solo controlan qué se muestra,
+// no dividen el envío. Por eso cada campo es controlado (useState) en vez
+// de dejar que el DOM guarde el valor — así, al cambiar de paso (que
+// remonta el contenido para poder animarlo con @keyframes en
 // app/globals.css), ningún valor se pierde. Cada paso vive en su propio
 // componente acá abajo para que este archivo no sea una sola función con
-// tres bloques de JSX condicional adentro.
+// bloques de JSX condicional adentro.
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createOrganization } from "@/app/actions/organizations";
@@ -18,7 +18,7 @@ import { CreateOrganizationFormState } from "@/lib/definitions";
 import { THEMES, DEFAULT_THEME } from "@/lib/themes";
 import { FONTS, DEFAULT_FONT } from "@/lib/fonts";
 
-const STEP_LABELS = ["Datos", "Colores", "Tipografía"];
+const STEP_LABELS = ["Datos", "Colores", "Tipografía", "Detalles"];
 
 function WizardProgress({ step }: { step: number }) {
   return (
@@ -224,20 +224,20 @@ function StepColors({
 
 function StepFonts({
   state,
-  pending,
   eventName,
   theme,
   font,
   setFont,
   onBack,
+  onNext,
 }: {
   state: CreateOrganizationFormState;
-  pending: boolean;
   eventName: string;
   theme: string;
   font: string;
   setFont: (v: string) => void;
   onBack: () => void;
+  onNext: () => void;
 }) {
   return (
     <div className="wizard-step" key="step-3" data-step-content="3">
@@ -276,6 +276,72 @@ function StepFonts({
         <button type="button" className="btn btn-ghost" onClick={onBack}>
           Atrás
         </button>
+        <button type="button" className="btn btn-primary" onClick={onNext}>
+          Siguiente
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Último paso, opcional del todo: mensaje de bienvenida y foto de portada.
+// A propósito ninguno de los dos es `required` — no todos tienen ya un
+// texto/foto a mano al crear la cuenta, y frenar el registro por eso
+// alejaría gente que igual puede completarlo después desde
+// /admin/contenido. El <input type="file"> no se puede "controlar" con
+// React (el navegador no deja setear su value por seguridad), así que solo
+// se guarda el nombre elegido para mostrarlo — el archivo en sí viaja tal
+// cual está en el DOM al momento del submit, no por estado.
+function StepDetails({
+  state,
+  pending,
+  lema,
+  setLema,
+  fotoName,
+  setFotoName,
+  onBack,
+}: {
+  state: CreateOrganizationFormState;
+  pending: boolean;
+  lema: string;
+  setLema: (v: string) => void;
+  fotoName: string | null;
+  setFotoName: (v: string | null) => void;
+  onBack: () => void;
+}) {
+  return (
+    <div className="wizard-step" key="step-4" data-step-content="4">
+      <p className="wizard-step-hint">
+        Un mensaje de bienvenida y una foto de portada para tu sitio — ambos
+        opcionales, los podés completar más adelante si no los tenés a mano
+        todavía.
+      </p>
+
+      <label htmlFor="lema">Mensaje de bienvenida (opcional)</label>
+      <input
+        id="lema"
+        name="lema"
+        type="text"
+        placeholder='Ej: "Nos casamos y queremos celebrarlo con ustedes"'
+        value={lema}
+        onChange={(e) => setLema(e.target.value)}
+        maxLength={140}
+      />
+
+      <label htmlFor="fotoPrincipal">Foto de portada (opcional)</label>
+      <input
+        id="fotoPrincipal"
+        name="fotoPrincipal"
+        type="file"
+        accept="image/*"
+        onChange={(e) => setFotoName(e.target.files?.[0]?.name ?? null)}
+      />
+      {fotoName && <p className="wizard-file-selected">Seleccionaste: {fotoName}</p>}
+
+      <div className="wizard-nav">
+        <button type="button" className="btn btn-ghost" onClick={onBack}>
+          Atrás
+        </button>
         <button type="submit" className="btn btn-primary" disabled={pending}>
           {pending ? "Creando tu evento..." : "Crear mi evento"}
         </button>
@@ -294,11 +360,13 @@ export default function CreateOrgForm() {
   const [password, setPassword] = useState("");
   const [theme, setTheme] = useState(DEFAULT_THEME);
   const [font, setFont] = useState(DEFAULT_FONT);
+  const [lema, setLema] = useState("");
+  const [fotoName, setFotoName] = useState<string | null>(null);
 
   const formRef = useRef<HTMLFormElement>(null);
 
   // Si el envío final falla (p. ej. correo ya usado, contraseña corta),
-  // el usuario puede estar parado en el paso 3 sin ver el error del paso
+  // el usuario puede estar parado en el paso 4 sin ver el error del paso
   // 1 — lo mandamos de vuelta al paso donde está el campo con el error.
   useEffect(() => {
     if (!state) return;
@@ -340,8 +408,10 @@ export default function CreateOrgForm() {
       {/* Cada paso solo monta sus propios campos — mientras uno no está
           visible, estos inputs ocultos mantienen su valor (ya vive en
           estado de React) presente en el <form> para que el envío final,
-          que siempre dispara desde el paso 3, incluya TODOS los campos y
-          no solo los del paso donde se hizo click en "Crear mi evento". */}
+          que siempre dispara desde el paso 4, incluya TODOS los campos y
+          no solo los del paso donde se hizo click en "Crear mi evento".
+          `lema`/`fotoPrincipal` no necesitan este espejo: viven solo en el
+          paso 4, que es justo donde se envía el form. */}
       {step !== 1 && (
         <>
           <input type="hidden" name="eventName" value={eventName} />
@@ -383,12 +453,24 @@ export default function CreateOrgForm() {
       {step === 3 && (
         <StepFonts
           state={state}
-          pending={pending}
           eventName={eventName}
           theme={theme}
           font={font}
           setFont={setFont}
           onBack={() => setStep(2)}
+          onNext={() => setStep(4)}
+        />
+      )}
+
+      {step === 4 && (
+        <StepDetails
+          state={state}
+          pending={pending}
+          lema={lema}
+          setLema={setLema}
+          fotoName={fotoName}
+          setFotoName={setFotoName}
+          onBack={() => setStep(3)}
         />
       )}
 
