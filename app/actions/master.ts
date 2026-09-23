@@ -30,13 +30,17 @@ export async function masterLogin(
 
   const { email, password } = validatedFields.data;
 
-  const user = await db.user.findUnique({ where: { email } });
+  // Filtrado por role: MASTER en la propia query (no solo después) — un
+  // correo ya puede tener cuentas ADMIN/GUEST en distintas organizaciones
+  // (ver prisma/schema.prisma#User) y ninguna de esas debe poder loguear
+  // acá, ni siquiera para llegar a intentar la contraseña.
+  const user = await db.user.findFirst({ where: { email, role: "MASTER" } });
   if (!user) {
     return { message: "Correo o contraseña incorrectos." };
   }
 
   const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
-  if (!passwordsMatch || user.role !== "MASTER") {
+  if (!passwordsMatch) {
     return { message: "Correo o contraseña incorrectos." };
   }
 

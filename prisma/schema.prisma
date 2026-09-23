@@ -91,7 +91,13 @@ model Organization {
 model User {
   id           String   @id @default(cuid())
   name         String
-  email        String   @unique
+  // Único por organización, ya NO a nivel de toda la plataforma (antes
+  // tenía @unique acá) — una misma persona puede ser admin de su propio
+  // evento y, con el mismo correo, invitada como GUEST a otro evento
+  // distinto (o tener cuentas de GUEST en varios eventos). Ver login() en
+  // app/actions/auth.ts, que ahora prueba la contraseña contra cada cuenta
+  // que comparta este correo en vez de asumir que hay una sola.
+  email        String
   passwordHash String
   role         Role     @default(GUEST)
 
@@ -110,6 +116,12 @@ model User {
   deviceVerifications DeviceVerification[]
   createdAt           DateTime @default(now())
 
+  // organizationId es NULL solo para MASTER, y Postgres no considera dos
+  // NULLs iguales entre sí en un índice único — dos MASTER podrían en
+  // teoría compartir correo sin que esto lo impida. No es un problema real
+  // hoy: no hay ningún flujo que cree un MASTER salvo prisma/seed.mjs a
+  // mano, así que no vale la pena una segunda constraint solo para eso.
+  @@unique([organizationId, email])
   @@index([organizationId])
 }
 

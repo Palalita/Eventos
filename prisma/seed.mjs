@@ -44,7 +44,9 @@ async function main() {
       "Faltan SEED_ADMIN_EMAIL y/o SEED_ADMIN_PASSWORD: me salteo la creación del admin (sin un valor por defecto, para no dejar una contraseña conocida por cualquiera). Definilas en .env si necesitás que el seed cree uno."
     );
   } else {
-    const existing = await db.user.findUnique({ where: { email: ADMIN_EMAIL } });
+    const existing = await db.user.findFirst({
+      where: { email: ADMIN_EMAIL, organizationId: organization.id },
+    });
     if (!existing) {
       const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
       await db.user.create({
@@ -67,7 +69,9 @@ async function main() {
       "Faltan SEED_MASTER_EMAIL y/o SEED_MASTER_PASSWORD: me salteo la creación del master. Definilas en .env si necesitás una cuenta para /master."
     );
   } else {
-    const existingMaster = await db.user.findUnique({ where: { email: MASTER_EMAIL } });
+    const existingMaster = await db.user.findFirst({
+      where: { email: MASTER_EMAIL, role: "MASTER" },
+    });
     if (!existingMaster) {
       const passwordHash = await bcrypt.hash(MASTER_PASSWORD, 10);
       await db.user.create({

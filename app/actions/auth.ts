@@ -65,9 +65,15 @@ export async function signup(_state: SignupFormState, formData: FormData) {
     };
   }
 
-  const existing = await db.user.findUnique({ where: { email } });
+  // Escopado a ESTA organización (no a toda la plataforma): la misma
+  // persona puede ya tener una cuenta en otro evento con este correo — eso
+  // es válido, ver prisma/schema.prisma#User. Lo único que no se permite es
+  // una segunda cuenta para el mismo correo dentro del mismo evento.
+  const existing = await db.user.findFirst({
+    where: { email, organizationId: invitation.organizationId },
+  });
   if (existing) {
-    return { message: "Ya existe una cuenta con ese correo." };
+    return { message: "Ya tenés una cuenta con ese correo en este evento." };
   }
 
   // bcrypt.hash hashea la contraseña (nunca se guarda en texto plano); el
@@ -114,19 +120,25 @@ export async function login(_state: LoginFormState, formData: FormData) {
 
   const { email, password } = validatedFields.data;
 
-  const user = await db.user.findUnique({ where: { email } });
+  // El correo ya no identifica una sola cuenta (puede haber una por
+  // organización — ver prisma/schema.prisma#User), así que se prueba la
+  // contraseña contra cada cuenta que comparta este correo y se entra a la
+  // primera que coincida. Si dos cuentas del mismo correo llegaran a tener
+  // también la misma contraseña (poco común — cada organización tiene la
+  // suya, elegida por separado), entra a la que aparezca primero; no hay
+  // forma de que el usuario elija cuál sin un selector de organización, que
+  // queda fuera de alcance por ahora.
+  const candidates = await db.user.findMany({ where: { email } });
+  let user: (typeof candidates)[number] | null = null;
+  for (const candidate of candidates) {
+    if (await bcrypt.compare(password, candidate.passwordHash)) {
+      user = candidate;
+      break;
+    }
+  }
   if (!user) {
     // Mensaje genérico a propósito: no decimos "el correo no existe" para no
     // ayudar a alguien a adivinar qué correos están registrados.
-    return { message: "Correo o contraseña incorrectos." };
-  }
-
-  // Siempre se corre el bcrypt.compare, incluso para MASTER, antes de
-  // rechazarlo por rol: si el chequeo de rol cortara primero, una cuenta
-  // master respondería más rápido que una normal (sin el costo de bcrypt),
-  // y ese tiempo de respuesta delataría qué correos son cuentas master.
-  const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
-  if (!passwordsMatch) {
     return { message: "Correo o contraseña incorrectos." };
   }
 
@@ -195,7 +207,11 @@ export async function login(_state: LoginFormState, formData: FormData) {
 // apariencia que LoginForm llama al perder foco el campo de correo, así
 // que a propósito no distingue "no existe esa cuenta" de "existe pero sin
 // organización" (MASTER, por ejemplo) — ambos casos devuelven null y la
-// página se queda con la identidad genérica de la plataforma. Ojo: esto sí
+// página se queda con la identidad genérica de la plataforma. Mismo
+// criterio si el correo tiene cuentas en MÁS DE UNA organización (ahora
+// posible — ver prisma/schema.prisma#User): no hay forma de adivinar a
+// cuál se está por loguear antes de la contraseña, así que mejor quedarse
+// con la identidad genérica que mostrar el tema equivocado. Ojo: esto sí
 // revela por un canal lateral (el cambio de color) si un correo tiene
 // cuenta registrada, igual que el patrón "branding por correo" que ya usan
 // productos como Slack u Okta en su pantalla de login — se acepta ese
@@ -205,19 +221,22 @@ export async function getOrgBrandingForEmail(email: string) {
   const trimmed = email.trim();
   if (!trimmed) return null;
 
-  const user = await db.user.findUnique({
+  const candidates = await db.user.findMany({
     where: { email: trimmed },
     select: { organizationId: true },
   });
-  if (!user?.organizationId) return null;
+  const orgIds = [
+    ...new Set(candidates.map((c) => c.organizationId).filter((id): id is string => id !== null)),
+  ];
+  if (orgIds.length !== 1) return null;
 
   const organization = await db.organization.findUnique({
-    where: { id: user.organizationId },
+    where: { id: orgIds[0] },
     select: { theme: true, font: true },
   });
   if (!organization) return null;
 
-  const settings = await getEventSettings(user.organizationId);
+  const settings = await getEventSettings(orgIds[0]);
 
   return {
     theme: isValidTheme(organization.theme) ? organization.theme : null,

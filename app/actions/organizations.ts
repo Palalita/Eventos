@@ -43,13 +43,13 @@ export async function createOrganization(
     ? validatedFields.data.font
     : DEFAULT_FONT;
 
-  // User.email sigue siendo único a nivel de toda la plataforma (una
-  // persona = una identidad, aunque después administre o sea invitada a
-  // varios eventos distintos — ver prisma/schema.prisma).
-  const existing = await db.user.findUnique({ where: { email } });
-  if (existing) {
-    return { message: "Ya existe una cuenta con ese correo." };
-  }
+  // No hace falta chequear "ya existe una cuenta con este correo": el
+  // correo es único por organización, no en toda la plataforma (ver
+  // prisma/schema.prisma#User), y la organización que se crea acá abajo es
+  // siempre nueva (id recién generado) — no puede colisionar con ninguna
+  // cuenta existente de este correo en OTRO evento, y eso es intencional:
+  // la misma persona puede administrar más de un evento con el mismo
+  // correo.
 
   // Independientes entre sí (uno no depende del resultado del otro): se
   // corren en paralelo en vez de uno tras otro.
