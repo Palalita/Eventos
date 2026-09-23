@@ -31,16 +31,21 @@ export default function GalleryImage({
     if (!el) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    // Se declara acá afuera (no adentro del if) para poder desconectarlo
+    // en el cleanup pase lo que pase — si el componente se desmonta
+    // antes de que la imagen entre al viewport, si no se hace así el
+    // observer queda vivo para siempre.
+    let observer: IntersectionObserver | null = null;
     const rect = el.getBoundingClientRect();
     if (rect.top < window.innerHeight * 0.9) {
       setVisible(true);
     } else {
       setVisible(false);
-      const observer = new IntersectionObserver(
+      observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) {
             setVisible(true);
-            observer.disconnect();
+            observer?.disconnect();
           }
         },
         { threshold: 0.1 }
@@ -48,7 +53,9 @@ export default function GalleryImage({
       observer.observe(el);
     }
 
-    if (reducedMotion) return;
+    if (reducedMotion) {
+      return () => observer?.disconnect();
+    }
 
     let raf = 0;
     function updateOffset() {
@@ -65,6 +72,7 @@ export default function GalleryImage({
     updateOffset();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
+      observer?.disconnect();
       window.removeEventListener("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
