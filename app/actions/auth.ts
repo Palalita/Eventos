@@ -18,6 +18,9 @@ import { db } from "@/lib/db";
 import { createSession, deleteSession } from "@/lib/session";
 import { getOrCreateDeviceToken, hashToken, setDeviceCookie } from "@/lib/device";
 import { sendDeviceVerificationEmail } from "@/lib/email";
+import { getEventSettings } from "@/lib/settings";
+import { isValidTheme } from "@/lib/themes";
+import { isValidFont } from "@/lib/fonts";
 import {
   LoginFormSchema,
   LoginFormState,
@@ -182,6 +185,45 @@ export async function login(_state: LoginFormState, formData: FormData) {
 
   await createSession({ userId: user.id, role: user.role, organizationId: user.organizationId });
   redirect("/panel");
+}
+
+// Resuelve el tema/tipografía/lema del evento del invitado (o admin) dueño
+// de ese correo, para que LoginForm.tsx pinte /login con la identidad de
+// ESA organización antes de iniciar sesión — igual que /registro ya hace
+// con el código de invitación, pero acá la única pista disponible antes de
+// loguear es el correo. No es un formulario: es solo un lookup de
+// apariencia que LoginForm llama al perder foco el campo de correo, así
+// que a propósito no distingue "no existe esa cuenta" de "existe pero sin
+// organización" (MASTER, por ejemplo) — ambos casos devuelven null y la
+// página se queda con la identidad genérica de la plataforma. Ojo: esto sí
+// revela por un canal lateral (el cambio de color) si un correo tiene
+// cuenta registrada, igual que el patrón "branding por correo" que ya usan
+// productos como Slack u Okta en su pantalla de login — se acepta ese
+// costo a cambio de que el invitado vea el sitio de su evento sin
+// depender de en qué dispositivo se registró.
+export async function getOrgBrandingForEmail(email: string) {
+  const trimmed = email.trim();
+  if (!trimmed) return null;
+
+  const user = await db.user.findUnique({
+    where: { email: trimmed },
+    select: { organizationId: true },
+  });
+  if (!user?.organizationId) return null;
+
+  const organization = await db.organization.findUnique({
+    where: { id: user.organizationId },
+    select: { theme: true, font: true },
+  });
+  if (!organization) return null;
+
+  const settings = await getEventSettings(user.organizationId);
+
+  return {
+    theme: isValidTheme(organization.theme) ? organization.theme : null,
+    font: isValidFont(organization.font) ? organization.font : null,
+    lema: settings.lema || null,
+  };
 }
 
 export async function logout() {

@@ -1,14 +1,11 @@
-// Página pública de login. El formulario real vive en ./LoginForm.tsx (tiene
-// que ser un componente de cliente aparte porque usa hooks de React, algo
-// que un Server Component como este no puede hacer).
-//
-// A diferencia de /registro, acá no hay forma de saber a qué organización
-// pertenece quien todavía no inició sesión (no hay código de invitación en
-// la URL), así que el texto es genérico de la plataforma, no el lema de un
-// evento puntual.
+// Página pública de login. El shell visual (fondo/tarjeta/eyebrow/título)
+// vive en ./LoginForm.tsx, no acá — tiene que ser así porque ese shell
+// cambia de identidad genérica de la plataforma al tema del evento del
+// invitado según lo que LoginForm resuelve del correo que va escribiendo
+// (ver getOrgBrandingForEmail en app/actions/auth.ts), y ese estado solo
+// existe en un componente de cliente.
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { COMPANY_NAME } from "@/lib/company";
 import LoginForm from "./LoginForm";
 
@@ -18,22 +15,11 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
+  // Next.js exige envolver en <Suspense> a cualquier componente que use
+  // useSearchParams() (como LoginForm, para leer ?device=...).
   return (
-    <main className="auth-page landing">
-      <div className="auth-card">
-        <div className="auth-back-row">
-          <Link href="/" className="auth-back-link">
-            ← Volver
-          </Link>
-        </div>
-        <p className="platform-eyebrow">{COMPANY_NAME}</p>
-        <h1>Iniciar sesión</h1>
-        {/* Next.js exige envolver en <Suspense> a cualquier componente que
-            use useSearchParams() (como LoginForm, para leer ?device=...) */}
-        <Suspense>
-          <LoginForm />
-        </Suspense>
-      </div>
-    </main>
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
