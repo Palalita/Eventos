@@ -6,7 +6,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY_NAME } from "@/lib/company";
-import GalleryImage from "./GalleryImage";
+import RevealImage from "./RevealImage";
+import Reveal from "./Reveal";
 
 // Metadata propia (no la genérica del layout raíz — ver
 // app/layout.tsx#generateMetadata): esta es la única página realmente
@@ -90,6 +91,30 @@ const SERVICIOS = [
   },
 ];
 
+// Las 3 celebraciones que pidió mostrar el usuario en su propia vitrina
+// (foto grande + texto, alternando de lado) justo después del hero.
+// Fotos de ejemplo (picsum, seed fijo) hasta tener fotos reales.
+const TIPOS_EVENTO = [
+  {
+    title: "Bodas",
+    image: "https://picsum.photos/seed/evento-boda-grande/900/675",
+    description:
+      "Un sitio elegante para acompañar cada momento de su boda: invitación digital, confirmación de asistencia y una galería donde sus invitados comparten los recuerdos del día.",
+  },
+  {
+    title: "Convivios",
+    image: "https://picsum.photos/seed/evento-convivio-grande/900/675",
+    description:
+      "Ideal para reuniones familiares o de amigos: invitaciones simples, lista de confirmados y un espacio donde juntar las fotos de todos en un solo lugar.",
+  },
+  {
+    title: "XV años",
+    image: "https://picsum.photos/seed/evento-xv-grande/900/675",
+    description:
+      "El clásico para unos XV: invitación con el estilo que elija, códigos únicos para cada invitado y una galería que crece con las fotos de la fiesta.",
+  },
+];
+
 // Imágenes de prueba (placeholder) para mostrar cómo se va a ver la
 // galería mientras no tenemos fotos reales de eventos — seeds fijos
 // (no random) para que no cambien en cada carga.
@@ -164,6 +189,40 @@ export default function LandingPage() {
         </a>
       </section>
 
+      <section className="landing-showcase" aria-labelledby="landing-showcase-title">
+        <h2 id="landing-showcase-title" className="landing-showcase-title">
+          Un sitio para cada celebración
+        </h2>
+        <ul className="landing-showcase-list">
+          {TIPOS_EVENTO.map((tipo, index) => (
+            <li
+              key={tipo.title}
+              className={`landing-showcase-item ${
+                index % 2 === 1 ? "landing-showcase-item--reverse" : ""
+              }`}
+            >
+              <div className="landing-showcase-image">
+                <RevealImage
+                  src={tipo.image}
+                  alt=""
+                  width={900}
+                  height={675}
+                  parallaxSpeed={index % 2 === 0 ? 0.8 : -0.8}
+                />
+              </div>
+              <Reveal className="landing-showcase-content">
+                <p className="platform-eyebrow">Ideal para</p>
+                <h3>{tipo.title}</h3>
+                <p>{tipo.description}</p>
+                <Link href="/crear-cuenta" className="landing-showcase-link">
+                  Crear mi evento →
+                </Link>
+              </Reveal>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <div className="landing-panel" id="landing-panel">
         <section className="landing-steps" aria-labelledby="landing-steps-title">
           <h2 id="landing-steps-title">Cómo funciona</h2>
@@ -207,7 +266,7 @@ export default function LandingPage() {
         <ul className="landing-gallery-grid">
           {GALERIA_PLACEHOLDER.map((src, index) => (
             <li key={src}>
-              <GalleryImage
+              <RevealImage
                 src={src}
                 delayMs={(index % 3) * 100}
                 parallaxSpeed={index % 2 === 0 ? 1 : -0.6}

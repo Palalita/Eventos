@@ -1820,6 +1820,98 @@ a {
   }
 }
 
+/* Vitrina de los 3 tipos de evento (bodas, convivios, XV años), justo
+   después del hero — foto grande alternando de lado, texto al otro
+   lado, cada una con su propia animación de entrada (RevealImage). */
+.landing-showcase {
+  max-width: 1100px;
+  margin: 0 auto 3rem;
+  padding: 1rem 1.5rem;
+}
+.landing-showcase-title {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.landing-showcase-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4.5rem;
+}
+.landing-showcase-item {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+.landing-showcase-item--reverse {
+  flex-direction: row-reverse;
+}
+.landing-showcase-image {
+  flex: 1 1 440px;
+  min-width: 280px;
+}
+.landing-showcase-image .landing-image-reveal-item {
+  height: auto;
+}
+.landing-showcase-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 1.5rem;
+}
+.landing-showcase-content {
+  flex: 1 1 320px;
+  min-width: 260px;
+  text-align: left;
+}
+.landing-showcase-content h3 {
+  font-size: 1.6rem;
+  margin: 0.3rem 0 0.7rem;
+}
+.landing-showcase-content p {
+  opacity: 0.75;
+  line-height: 1.65;
+  margin: 0 0 1.2rem;
+  max-width: 420px;
+}
+.landing-showcase-link {
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.landing-showcase-link:hover {
+  border-bottom-color: currentColor;
+}
+@media (max-width: 860px) {
+  /* En mobile siempre la foto arriba y el texto abajo, sin importar si
+     esta fila iba "al revés" en desktop — mezclar los dos órdenes se
+     ve inconsistente en una sola columna. */
+  .landing-showcase-item,
+  .landing-showcase-item--reverse {
+    flex-direction: column;
+  }
+  /* flex-basis es un ancho pensado para la fila de desktop — en modo
+     columna (mobile) ese mismo valor pasa a ser un ALTO, dejando un
+     espacio vacío enorme debajo de la foto. En columna, que cada uno
+     mida lo que su contenido necesite. */
+  .landing-showcase-image,
+  .landing-showcase-content {
+    flex: none;
+    width: 100%;
+  }
+  .landing-showcase-content {
+    text-align: center;
+  }
+  .landing-showcase-content p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 /* El "panel" grande de esquinas redondeadas que agrupa "cómo funciona" y
    los servicios — es lo que le da al landing el aire de bloques apilados
    de la referencia, sin depender de una animación de scroll frágil. */
@@ -1970,17 +2062,12 @@ a {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   /* Más separación que un grid común a propósito: cada foto se mueve
-     hasta ~±32px con el parallax (ver app/GalleryImage.tsx) y con
+     hasta ~±32px con el parallax (ver app/RevealImage.tsx) y con
      menos aire entre filas llegaba a traslaparse con la fila vecina. */
   gap: 2.5rem 1.5rem;
   list-style: none;
   padding: 0;
   margin: 0;
-}
-.landing-gallery-item {
-  height: 100%;
-  /* La actualiza en cada scroll app/GalleryImage.tsx (parallax) — sin
-     transition acá a propósito, se recalcula cuadro a cuadro. */
 }
 .landing-gallery-grid img {
   display: block;
@@ -1990,33 +2077,43 @@ a {
   object-fit: cover;
   border-radius: 1.25rem;
 }
+@media (max-width: 640px) {
+  .landing-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Animación de app/RevealImage.tsx — la usan tanto las fotos chicas de
+   la galería como las grandes de "tipos de evento"; el tamaño real lo
+   define el CSS de cada sección (.landing-gallery-grid img,
+   .landing-showcase-image img). */
+.landing-image-reveal-item {
+  height: 100%;
+  /* Actualizado en cada scroll por RevealImage.tsx (parallax) — sin
+     transition acá a propósito, se recalcula cuadro a cuadro. */
+}
 /* Entrada de cada foto: crece desde un poco más chica y desenfocada
    hasta su tamaño real — más presencia que un simple fade. El parallax
-   en sí (traslado en Y) lo aplica app/GalleryImage.tsx en el div
-   contenedor (.landing-gallery-item), no acá, para no pelear con esta
+   en sí (traslado en Y) lo aplica RevealImage.tsx en el div contenedor
+   (.landing-image-reveal-item), no acá, para no pelear con esta
    transición. */
-.landing-gallery-img {
+.landing-image-reveal {
   opacity: 0;
   transform: scale(0.92);
   filter: blur(6px);
   transition: opacity 0.8s ease, transform 0.8s ease, filter 0.8s ease;
 }
-.landing-gallery-img--visible {
+.landing-image-reveal--visible {
   opacity: 1;
   transform: scale(1);
   filter: blur(0);
 }
 @media (prefers-reduced-motion: reduce) {
-  .landing-gallery-img {
+  .landing-image-reveal {
     transition: none;
     opacity: 1;
     transform: scale(1);
     filter: none;
-  }
-}
-@media (max-width: 640px) {
-  .landing-gallery-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 

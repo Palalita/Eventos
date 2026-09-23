@@ -1,20 +1,26 @@
 "use client";
 
-// Foto de la galería de la landing (app/page.tsx): entra con un
-// crecimiento suave (escala + blur + fade) al llegar al viewport, y
-// mientras está a la vista se mueve un poco más lento/rápido que el
-// resto de la página al hacer scroll (parallax) — el efecto "imágenes
-// que cobran vida al scrollear" que pidió el usuario. Sin JS o con
-// prefers-reduced-motion, se muestra fija y quieta, nunca depende de JS
-// para poder verse.
+// Imagen que entra con un crecimiento suave (escala + blur + fade) al
+// llegar al viewport, y mientras está a la vista se mueve un poco a
+// contra-scroll (parallax) — usado tanto para las fotos chicas de la
+// galería como para las fotos grandes de "tipos de evento" en
+// app/page.tsx (el tamaño real lo define el CSS de cada sección, esto
+// solo pone la animación). Sin JS o con prefers-reduced-motion, se
+// muestra fija y quieta, nunca depende de JS para poder verse.
 import { useEffect, useRef, useState } from "react";
 
-export default function GalleryImage({
+export default function RevealImage({
   src,
+  alt = "",
+  width = 500,
+  height = 500,
   delayMs = 0,
   parallaxSpeed = 1,
 }: {
   src: string;
+  alt?: string;
+  width?: number;
+  height?: number;
   delayMs?: number;
   // >0 = se mueve en sentido contrario al scroll (efecto clásico de
   // parallax); valores más grandes = se mueve más.
@@ -79,14 +85,14 @@ export default function GalleryImage({
   }, [parallaxSpeed]);
 
   return (
-    <div ref={ref} className="landing-gallery-item" style={{ transform: `translateY(${offset}px)` }}>
+    <div ref={ref} className="landing-image-reveal-item" style={{ transform: `translateY(${offset}px)` }}>
       <img
         src={src}
-        alt=""
-        width={500}
-        height={500}
+        alt={alt}
+        width={width}
+        height={height}
         loading="lazy"
-        className={`landing-gallery-img ${visible === false ? "" : "landing-gallery-img--visible"}`}
+        className={`landing-image-reveal ${visible === false ? "" : "landing-image-reveal--visible"}`}
         style={{ transitionDelay: `${delayMs}ms` }}
       />
     </div>
