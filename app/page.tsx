@@ -92,24 +92,27 @@ const SERVICIOS = [
 ];
 
 // Las 3 celebraciones que pidió mostrar el usuario en su propia vitrina
-// (foto grande + texto, alternando de lado) justo después del hero.
-// Fotos de ejemplo (picsum, seed fijo) hasta tener fotos reales.
+// (foto grande + texto, alternando de lado) justo después del hero. Fotos
+// de ejemplo de Unsplash (licencia libre, sin atribución obligatoria) hasta
+// tener fotos reales — a diferencia de picsum (fotos random sin relación
+// con el evento), estas sí son fotos reales de cada tipo de celebración.
 const TIPOS_EVENTO = [
   {
     title: "Bodas",
-    image: "https://picsum.photos/seed/evento-boda-grande/900/675",
+    image: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=900&h=675&fit=crop&q=80",
     description:
       "Un sitio elegante para acompañar cada momento de su boda: invitación digital, confirmación de asistencia y una galería donde sus invitados comparten los recuerdos del día.",
   },
   {
     title: "Convivios",
-    image: "https://picsum.photos/seed/evento-convivio-grande/900/675",
+    image: "https://images.unsplash.com/photo-1621112904887-419379ce6824?w=900&h=675&fit=crop&q=80",
     description:
       "Ideal para reuniones familiares o de amigos: invitaciones simples, lista de confirmados y un espacio donde juntar las fotos de todos en un solo lugar.",
   },
   {
     title: "XV años",
-    image: "https://picsum.photos/seed/evento-xv-grande/900/675",
+    image:
+      "https://images.unsplash.com/photo-1788062803042-f04654cf02e4?w=900&h=675&fit=crop&crop=top&q=80",
     description:
       "El clásico para unos XV: invitación con el estilo que elija, códigos únicos para cada invitado y una galería que crece con las fotos de la fiesta.",
   },
