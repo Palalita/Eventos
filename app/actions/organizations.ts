@@ -12,6 +12,7 @@ import { createSession } from "@/lib/session";
 import { provisionOrganization } from "@/lib/organizations";
 import { isValidTheme, DEFAULT_THEME } from "@/lib/themes";
 import { isValidFont, DEFAULT_FONT } from "@/lib/fonts";
+import { isValidLayout, DEFAULT_LAYOUT } from "@/lib/layouts";
 import {
   ALLOWED_IMAGE_TYPES,
   MAX_IMAGE_SIZE_BYTES,
@@ -34,6 +35,7 @@ export async function createOrganization(
     password: formData.get("password"),
     theme: formData.get("theme"),
     font: formData.get("font"),
+    layout: formData.get("layout"),
   });
 
   if (!validatedFields.success) {
@@ -41,7 +43,7 @@ export async function createOrganization(
   }
 
   const { eventName, name, email, password } = validatedFields.data;
-  // Los pickers mandan radios con name="theme"/"font"; si por algo
+  // Los pickers mandan radios con name="theme"/"font"/"layout"; si por algo
   // llegara vacío o con un id que ya no existe (una opción que se sacó
   // del registro), se cae al default en vez de guardar basura en la BD.
   const theme = isValidTheme(validatedFields.data.theme)
@@ -50,6 +52,9 @@ export async function createOrganization(
   const font = isValidFont(validatedFields.data.font)
     ? validatedFields.data.font
     : DEFAULT_FONT;
+  const layout = isValidLayout(validatedFields.data.layout)
+    ? validatedFields.data.layout
+    : DEFAULT_LAYOUT;
 
   // No hace falta chequear "ya existe una cuenta con este correo": el
   // correo es único por organización, no en toda la plataforma (ver
@@ -70,7 +75,7 @@ export async function createOrganization(
   // corren en paralelo en vez de uno tras otro.
   const [passwordHash, organization] = await Promise.all([
     bcrypt.hash(password, 10),
-    provisionOrganization({ eventName, theme, font, lema }),
+    provisionOrganization({ eventName, theme, font, layout, lema }),
   ]);
 
   // La foto se procesa/sube DESPUÉS de crear la organización porque el

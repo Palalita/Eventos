@@ -54,10 +54,14 @@ const fechaEventoFormatter = new Intl.DateTimeFormat("es-GT", {
 
 export default async function Home() {
   const session = await requireOrgSession(); // redirige a /login si no hay sesión (u organización)
-  const [user, settings, flags] = await Promise.all([
+  const [user, settings, flags, organization] = await Promise.all([
     db.user.findUniqueOrThrow({ where: { id: session.userId } }),
     getEventSettings(session.organizationId),
     getSectionFlags(session.organizationId),
+    db.organization.findUniqueOrThrow({
+      where: { id: session.organizationId },
+      select: { layout: true },
+    }),
   ]);
 
   // Solo se consulta para invitados: es lo que alimenta la campana de
@@ -153,7 +157,7 @@ export default async function Home() {
         <SitioEnPreparacion nombreEvento={settings.tituloEvento} />
       ) : (
         <>
-          <GuestHero settings={settings} fechaFormateada={fechaFormateada} />
+          <GuestHero settings={settings} fechaFormateada={fechaFormateada} layout={organization.layout} />
           <GuestHome
             organizationId={session.organizationId}
             settings={settings}
@@ -250,9 +254,11 @@ async function AdminHome({ organizationId }: { organizationId: string }) {
 function GuestHero({
   settings,
   fechaFormateada,
+  layout,
 }: {
   settings: EventSettings;
   fechaFormateada: string;
+  layout: string;
 }) {
   // ?v=timestamp para invalidar la caché del navegador/CDN cuando el admin
   // sube una foto principal nueva (mismo nombre de archivo en Blob, ver
@@ -260,6 +266,32 @@ function GuestHero({
   const fotoSrc = settings.fotoPrincipalUrl
     ? `${settings.fotoPrincipalUrl}?v=${settings.updatedAt.getTime()}`
     : null;
+
+  if (layout === "cinematica") {
+    return (
+      <section className="guest-hero guest-hero--cinema">
+        {fotoSrc && (
+          <>
+            <HeroPhoto src={fotoSrc} alt={settings.tituloEvento} className="hero-cinema-media" />
+            <span className="hero-cinema-overlay" aria-hidden="true" />
+          </>
+        )}
+
+        <Reveal>
+          <div className="hero-cinema-content">
+            <p className="hero-cinema-eyebrow">{settings.lema}</p>
+            <h1 className="hero-cinema-title">{settings.tituloEvento}</h1>
+            <p className="hero-cinema-date">
+              {fechaFormateada} · {settings.lugar}
+            </p>
+            <Countdown target={settings.fechaEvento.toISOString()} />
+          </div>
+        </Reveal>
+
+        <ScrollHint />
+      </section>
+    );
+  }
 
   return (
     <section className="guest-hero">
@@ -275,9 +307,8 @@ function GuestHero({
           {fotoSrc ? (
             <HeroPhoto src={fotoSrc} alt={settings.tituloEvento} />
           ) : (
-            <div className="hero-polaroid-placeholder">Mis XV años</div>
+            <div className="hero-polaroid-placeholder">{settings.tituloEvento}</div>
           )}
-          <span className="hero-seal">XV</span>
         </div>
       </Reveal>
 

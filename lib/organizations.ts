@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { SITE_SECTIONS } from "@/lib/site-sections";
 import { DEFAULT_THEME } from "@/lib/themes";
 import { DEFAULT_FONT } from "@/lib/fonts";
+import { DEFAULT_LAYOUT } from "@/lib/layouts";
 
 const SLUG_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -49,6 +50,7 @@ export async function provisionOrganization(input: {
   eventName: string;
   theme?: string;
   font?: string;
+  layout?: string;
   // Opcionales: si el cliente ya escribió un mensaje de bienvenida en
   // /crear-cuenta, se guarda de una vez. La foto principal NO entra acá —
   // necesita el id de la organización para su nombre de archivo en Blob
@@ -64,6 +66,7 @@ export async function provisionOrganization(input: {
       name: input.eventName,
       theme: input.theme ?? DEFAULT_THEME,
       font: input.font ?? DEFAULT_FONT,
+      layout: input.layout ?? DEFAULT_LAYOUT,
     },
   });
 

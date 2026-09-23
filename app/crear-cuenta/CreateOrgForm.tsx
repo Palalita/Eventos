@@ -1,9 +1,9 @@
 "use client";
 
-// Formulario de /crear-cuenta, armado como wizard de 4 pasos (datos →
-// colores → tipografía → detalles) para darle más espacio a cada decisión
-// de diseño en vez de amontonar todo en un solo formulario largo. Sigue
-// siendo UN solo <form> con una sola Server Action (createOrganization,
+// Formulario de /crear-cuenta, armado como wizard de 5 pasos (datos →
+// diseño → colores → tipografía → detalles) para darle más espacio a cada
+// decisión de diseño en vez de amontonar todo en un solo formulario largo.
+// Sigue siendo UN solo <form> con una sola Server Action (createOrganization,
 // app/actions/organizations.ts): los pasos solo controlan qué se muestra,
 // no dividen el envío. Por eso cada campo es controlado (useState) en vez
 // de dejar que el DOM guarde el valor — así, al cambiar de paso (que
@@ -17,8 +17,34 @@ import { createOrganization } from "@/app/actions/organizations";
 import { CreateOrganizationFormState } from "@/lib/definitions";
 import { THEMES, DEFAULT_THEME } from "@/lib/themes";
 import { FONTS, DEFAULT_FONT } from "@/lib/fonts";
+import { LAYOUTS, DEFAULT_LAYOUT } from "@/lib/layouts";
 
-const STEP_LABELS = ["Datos", "Colores", "Tipografía", "Detalles"];
+const STEP_LABELS = ["Datos", "Diseño", "Colores", "Tipografía", "Detalles"];
+
+// Silueta chica de cada estructura de portada — sirve de vista previa en el
+// picker sin tener que reproducir el layout real dentro de una cajita
+// diminuta. Colores fijos a propósito (no el tema elegido): este paso va
+// ANTES de elegir paleta, así que todavía no hay un tema que aplicarle.
+function LayoutIcon({ layoutId }: { layoutId: string }) {
+  if (layoutId === "cinematica") {
+    return (
+      <svg viewBox="0 0 72 54" width="72" height="54" aria-hidden="true">
+        <rect x="0" y="0" width="72" height="54" rx="4" fill="#d86c7d" />
+        <rect x="0" y="30" width="72" height="24" fill="#5c1a28" opacity="0.75" />
+        <rect x="8" y="36" width="32" height="3" rx="1.5" fill="#ffffff" />
+        <rect x="8" y="43" width="20" height="2" rx="1" fill="#ffffff" opacity="0.8" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 72 54" width="72" height="54" aria-hidden="true">
+      <rect x="0" y="0" width="72" height="54" rx="4" fill="#fff8f5" stroke="#f0d9dd" />
+      <rect x="24" y="6" width="24" height="28" rx="1" fill="#f5cbd5" stroke="#d86c7d" />
+      <rect x="26" y="40" width="20" height="2.5" rx="1.25" fill="#bda672" />
+      <rect x="30" y="46" width="12" height="2" rx="1" fill="#d86c7d" opacity="0.6" />
+    </svg>
+  );
+}
 
 function WizardProgress({ step }: { step: number }) {
   return (
@@ -156,6 +182,65 @@ function StepData({
   );
 }
 
+function StepLayout({
+  state,
+  layout,
+  setLayout,
+  onBack,
+  onNext,
+}: {
+  state: CreateOrganizationFormState;
+  layout: string;
+  setLayout: (v: string) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="wizard-step" key="step-2" data-step-content="2">
+      <p className="wizard-step-hint">
+        Elegí cómo se arma la portada de tu sitio — el color y la tipografía
+        se eligen en los próximos pasos.
+      </p>
+
+      <fieldset className="theme-picker">
+        <legend>Elegí una estructura de portada</legend>
+        <div className="theme-picker-grid wizard-layout-grid">
+          {LAYOUTS.map((option) => (
+            <div key={option.id} className="theme-option">
+              <input
+                type="radio"
+                id={`layout-${option.id}`}
+                name="layout"
+                value={option.id}
+                checked={layout === option.id}
+                onChange={() => setLayout(option.id)}
+                className="theme-option-input"
+              />
+              <label htmlFor={`layout-${option.id}`} className="theme-option-label">
+                <span className="theme-option-preview wizard-layout-swatch" aria-hidden="true">
+                  <LayoutIcon layoutId={option.id} />
+                </span>
+                <span className="theme-option-name">{option.label}</span>
+                <span className="theme-option-description">{option.description}</span>
+              </label>
+            </div>
+          ))}
+        </div>
+      </fieldset>
+      {state?.errors?.layout && <p className="field-error">{state.errors.layout}</p>}
+
+      <div className="wizard-nav">
+        <button type="button" className="btn btn-ghost" onClick={onBack}>
+          Atrás
+        </button>
+        <button type="button" className="btn btn-primary" onClick={onNext}>
+          Siguiente
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function StepColors({
   state,
   eventName,
@@ -174,7 +259,7 @@ function StepColors({
   onNext: () => void;
 }) {
   return (
-    <div className="wizard-step" key="step-2" data-step-content="2">
+    <div className="wizard-step" key="step-3" data-step-content="3">
       <p className="wizard-step-hint">
         Elegí la paleta de color de tu sitio — la tipografía la elegís en el próximo paso.
       </p>
@@ -240,7 +325,7 @@ function StepFonts({
   onNext: () => void;
 }) {
   return (
-    <div className="wizard-step" key="step-3" data-step-content="3">
+    <div className="wizard-step" key="step-4" data-step-content="4">
       <p className="wizard-step-hint">Elegí la tipografía de tu sitio.</p>
 
       <fieldset className="theme-picker">
@@ -310,7 +395,7 @@ function StepDetails({
   onBack: () => void;
 }) {
   return (
-    <div className="wizard-step" key="step-4" data-step-content="4">
+    <div className="wizard-step" key="step-5" data-step-content="5">
       <p className="wizard-step-hint">
         Un mensaje de bienvenida y una foto de portada para tu sitio — ambos
         opcionales, los podés completar más adelante si no los tenés a mano
@@ -358,6 +443,7 @@ export default function CreateOrgForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   const [theme, setTheme] = useState(DEFAULT_THEME);
   const [font, setFont] = useState(DEFAULT_FONT);
   const [lema, setLema] = useState("");
@@ -366,7 +452,7 @@ export default function CreateOrgForm() {
   const formRef = useRef<HTMLFormElement>(null);
 
   // Si el envío final falla (p. ej. correo ya usado, contraseña corta),
-  // el usuario puede estar parado en el paso 4 sin ver el error del paso
+  // el usuario puede estar parado en el paso 5 sin ver el error del paso
   // 1 — lo mandamos de vuelta al paso donde está el campo con el error.
   useEffect(() => {
     if (!state) return;
@@ -378,10 +464,12 @@ export default function CreateOrgForm() {
       state.errors?.password;
     if (step1HasError) {
       setStep(1);
-    } else if (state.errors?.theme) {
+    } else if (state.errors?.layout) {
       setStep(2);
-    } else if (state.errors?.font) {
+    } else if (state.errors?.theme) {
       setStep(3);
+    } else if (state.errors?.font) {
+      setStep(4);
     }
   }, [state]);
 
@@ -408,10 +496,10 @@ export default function CreateOrgForm() {
       {/* Cada paso solo monta sus propios campos — mientras uno no está
           visible, estos inputs ocultos mantienen su valor (ya vive en
           estado de React) presente en el <form> para que el envío final,
-          que siempre dispara desde el paso 4, incluya TODOS los campos y
+          que siempre dispara desde el paso 5, incluya TODOS los campos y
           no solo los del paso donde se hizo click en "Crear mi evento".
           `lema`/`fotoPrincipal` no necesitan este espejo: viven solo en el
-          paso 4, que es justo donde se envía el form. */}
+          paso 5, que es justo donde se envía el form. */}
       {step !== 1 && (
         <>
           <input type="hidden" name="eventName" value={eventName} />
@@ -420,8 +508,9 @@ export default function CreateOrgForm() {
           <input type="hidden" name="password" value={password} />
         </>
       )}
-      {step !== 2 && <input type="hidden" name="theme" value={theme} />}
-      {step !== 3 && <input type="hidden" name="font" value={font} />}
+      {step !== 2 && <input type="hidden" name="layout" value={layout} />}
+      {step !== 3 && <input type="hidden" name="theme" value={theme} />}
+      {step !== 4 && <input type="hidden" name="font" value={font} />}
 
       {step === 1 && (
         <StepData
@@ -439,30 +528,40 @@ export default function CreateOrgForm() {
       )}
 
       {step === 2 && (
-        <StepColors
+        <StepLayout
           state={state}
-          eventName={eventName}
-          theme={theme}
-          setTheme={setTheme}
-          font={font}
+          layout={layout}
+          setLayout={setLayout}
           onBack={() => setStep(1)}
           onNext={() => setStep(3)}
         />
       )}
 
       {step === 3 && (
-        <StepFonts
+        <StepColors
           state={state}
           eventName={eventName}
           theme={theme}
+          setTheme={setTheme}
           font={font}
-          setFont={setFont}
           onBack={() => setStep(2)}
           onNext={() => setStep(4)}
         />
       )}
 
       {step === 4 && (
+        <StepFonts
+          state={state}
+          eventName={eventName}
+          theme={theme}
+          font={font}
+          setFont={setFont}
+          onBack={() => setStep(3)}
+          onNext={() => setStep(5)}
+        />
+      )}
+
+      {step === 5 && (
         <StepDetails
           state={state}
           pending={pending}
@@ -470,7 +569,7 @@ export default function CreateOrgForm() {
           setLema={setLema}
           fotoName={fotoName}
           setFotoName={setFotoName}
-          onBack={() => setStep(3)}
+          onBack={() => setStep(4)}
         />
       )}
 

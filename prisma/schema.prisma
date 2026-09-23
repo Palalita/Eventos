@@ -72,11 +72,15 @@ model Organization {
   // página pública por evento.
   slug      String    @unique
   name      String
-  // Paleta de color y tipografía se eligen por separado (ver
-  // app/crear-cuenta/CreateOrgForm.tsx, el wizard de 3 pasos) — cada una
-  // referencia un preset (lib/themes.ts / lib/fonts.ts), nunca CSS libre.
+  // Paleta de color, tipografía y estructura de la portada se eligen por
+  // separado (ver app/crear-cuenta/CreateOrgForm.tsx, el wizard) — cada una
+  // referencia un preset (lib/themes.ts / lib/fonts.ts / lib/layouts.ts),
+  // nunca CSS libre. `layout` decide cómo se arma la portada del invitado
+  // (GuestHero en app/panel/page.tsx) — el color/tipografía elegidos se le
+  // aplican igual, vía las mismas variables --rose/--gold/etc.
   theme     String   @default("xv_rosa_dorado")
   font      String   @default("clasica")
+  layout    String   @default("clasico")
   createdAt DateTime @default(now())
 
   users               User[]
