@@ -186,9 +186,11 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-showcase" aria-labelledby="landing-showcase-title">
-        <h2 id="landing-showcase-title" className="landing-showcase-title">
-          Un sitio para cada celebración
-        </h2>
+        <Reveal>
+          <h2 id="landing-showcase-title" className="landing-showcase-title">
+            Un sitio para cada celebración
+          </h2>
+        </Reveal>
         <ul className="landing-showcase-list">
           {TIPOS_EVENTO.map((tipo, index) => (
             <li
@@ -221,8 +223,10 @@ export default function LandingPage() {
 
       <div className="landing-panel" id="landing-panel">
         <section className="landing-steps" aria-labelledby="landing-steps-title">
-          <h2 id="landing-steps-title">Cómo funciona</h2>
-          <hr className="landing-divider" />
+          <Reveal>
+            <h2 id="landing-steps-title">Cómo funciona</h2>
+            <hr className="landing-divider" />
+          </Reveal>
           <ol className="landing-steps-grid">
             {PASOS.map((paso, index) => (
               <li key={paso.title}>
@@ -240,8 +244,10 @@ export default function LandingPage() {
 
         <section className="landing-services-modern" aria-labelledby="landing-services-title">
           <AmbientBackground />
-          <h2 id="landing-services-title">Todo lo que incluye su sitio</h2>
-          <hr className="landing-divider" />
+          <Reveal>
+            <h2 id="landing-services-title">Todo lo que incluye su sitio</h2>
+            <hr className="landing-divider" />
+          </Reveal>
           <ul className="landing-services-modern-grid">
             {SERVICIOS.map((servicio, index) => (
               <li key={servicio.title}>
@@ -258,11 +264,13 @@ export default function LandingPage() {
 
       <section className="landing-gallery" aria-labelledby="landing-gallery-title">
         <AmbientBackground />
-        <h2 id="landing-gallery-title">Así se ve la galería de su evento</h2>
-        <p className="landing-gallery-subtitle">
-          Fotos de ejemplo — cuando cree su sitio, aquí aparecerán las que
-          suban sus invitados.
-        </p>
+        <Reveal>
+          <h2 id="landing-gallery-title">Así se ve la galería de su evento</h2>
+          <p className="landing-gallery-subtitle">
+            Fotos de ejemplo — cuando cree su sitio, aquí aparecerán las que
+            suban sus invitados.
+          </p>
+        </Reveal>
         <ul className="landing-gallery-grid">
           {GALERIA_PLACEHOLDER.map((src, index) => (
             <li key={src}>
@@ -277,11 +285,13 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-cta-panel">
-        <h2>¿Ya tiene su evento con nosotros?</h2>
-        <p className="landing-cta-panel-text">
-          Inicie sesión para enviar invitaciones y revisar las fotos de sus
-          invitados.
-        </p>
+        <Reveal>
+          <h2>¿Ya tiene su evento con nosotros?</h2>
+          <p className="landing-cta-panel-text">
+            Inicie sesión para enviar invitaciones y revisar las fotos de sus
+            invitados.
+          </p>
+        </Reveal>
         <div className="landing-cta-panel-actions">
           <Link href="/login" className="btn btn-invert-primary">
             Iniciar sesión
