@@ -428,6 +428,9 @@ function StepDetails({
         onChange={(e) => setFotoName(e.target.files?.[0]?.name ?? null)}
       />
       {fotoName && <p className="wizard-file-selected">Seleccionaste: {fotoName}</p>}
+      {state?.errors?.fotoPrincipal && (
+        <p className="field-error">{state.errors.fotoPrincipal}</p>
+      )}
 
       <div className="wizard-nav">
         <button type="button" className="btn btn-ghost" onClick={onBack}>
@@ -475,6 +478,8 @@ export default function CreateOrgForm() {
       setStep(3);
     } else if (state.errors?.font) {
       setStep(4);
+    } else if (state.errors?.fotoPrincipal) {
+      setStep(5);
     }
   }, [state]);
 

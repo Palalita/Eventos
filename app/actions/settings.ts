@@ -16,6 +16,7 @@ import {
   MAX_IMAGE_SIZE_BYTES,
   OPTIMIZED_JPEG_QUALITY,
   OPTIMIZED_MAX_WIDTH,
+  cinemaPhotoAspectRatioError,
 } from "@/lib/uploads";
 
 // El formulario de app/admin/paginas manda un checkbox por sección; los
@@ -48,7 +49,9 @@ export async function updateSiteSections(formData: FormData) {
   revalidatePath("/admin/paginas");
 }
 
-export async function updateEventSettings(formData: FormData) {
+export async function updateEventSettings(
+  formData: FormData
+): Promise<void | { error: string }> {
   const session = await requireAdmin();
 
   const tituloEvento = (formData.get("tituloEvento") as string)?.trim();
@@ -80,7 +83,24 @@ export async function updateEventSettings(formData: FormData) {
     if (fotoPrincipal.size > MAX_IMAGE_SIZE_BYTES) {
       return;
     }
-    const body = await sharp(Buffer.from(await fotoPrincipal.arrayBuffer()))
+    const buffer = Buffer.from(await fotoPrincipal.arrayBuffer());
+
+    // Esta foto es la que usa el hero cinemático como fondo a pantalla
+    // completa (ver lib/uploads.ts#cinemaPhotoAspectRatioError) — con el
+    // layout clásico no hace falta chequear nada, va en un marco chico.
+    const organization = await db.organization.findUniqueOrThrow({
+      where: { id: session.organizationId },
+      select: { layout: true },
+    });
+    if (organization.layout === "cinematica") {
+      const metadata = await sharp(buffer).metadata();
+      const aspectRatioError = cinemaPhotoAspectRatioError(metadata.width, metadata.height);
+      if (aspectRatioError) {
+        return { error: aspectRatioError };
+      }
+    }
+
+    const body = await sharp(buffer)
       .rotate()
       .resize({ width: OPTIMIZED_MAX_WIDTH, withoutEnlargement: true })
       .jpeg({ quality: OPTIMIZED_JPEG_QUALITY })

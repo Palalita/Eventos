@@ -66,6 +66,10 @@ export type CreateOrganizationFormState =
         theme?: string[];
         font?: string[];
         layout?: string[];
+        // No viene de Zod (la valida createOrganization a mano, ya con el
+        // archivo en memoria) — ver cinemaPhotoAspectRatioError en
+        // lib/uploads.ts.
+        fotoPrincipal?: string[];
       };
       message?: string;
     }

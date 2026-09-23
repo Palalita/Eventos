@@ -42,3 +42,37 @@ export function statusFolder(status: "PENDING" | "APPROVED" | "REJECTED") {
       ? "approved"
       : "rejected";
 }
+
+// La foto de portada del layout "cinematica" (lib/layouts.ts) llena la
+// pantalla como fondo con object-fit:cover, tanto en celular (recuadro
+// angosto y alto) como en escritorio (recuadro ancho y bajo). Una foto muy
+// panorámica (gente separada a los costados, como una selfie grupal) pierde
+// a alguien en el recorte angosto de celular; una muy vertical pierde la
+// parte de arriba/abajo en el recorte ancho de escritorio. Este rango deja
+// pasar fotos razonablemente cuadradas o apaisadas (usadas por
+// createOrganization en app/actions/organizations.ts y updateEventSettings
+// en app/actions/settings.ts, los dos lugares donde se puede subir esta
+// foto) — el layout "clasico" no tiene este problema (la foto va en un
+// marco chico tipo polaroid, no de fondo a pantalla completa) así que no
+// se valida ahí.
+export const CINEMA_PHOTO_MIN_ASPECT_RATIO = 0.75; // hasta 3:4 vertical
+export const CINEMA_PHOTO_MAX_ASPECT_RATIO = 1.6; // hasta un poco más ancha que 3:2
+
+// Devuelve un mensaje de error si la foto no sirve para el layout
+// cinemático, o null si está OK.
+export function cinemaPhotoAspectRatioError(
+  width: number | undefined,
+  height: number | undefined
+): string | null {
+  if (!width || !height) {
+    return "No se pudo leer el tamaño de esa imagen. Probá con otra foto.";
+  }
+  const ratio = width / height;
+  if (ratio > CINEMA_PHOTO_MAX_ASPECT_RATIO) {
+    return "Esta foto es demasiado panorámica para el layout Cinemática: en celular recortaría a alguien de los costados. Probá con una foto menos ancha (más cuadrada), o cambiá a layout Clásico.";
+  }
+  if (ratio < CINEMA_PHOTO_MIN_ASPECT_RATIO) {
+    return "Esta foto es demasiado vertical para el layout Cinemática: en pantallas anchas recortaría la parte de arriba o abajo. Probá con una foto menos alargada, o cambiá a layout Clásico.";
+  }
+  return null;
+}

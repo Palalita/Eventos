@@ -18,6 +18,7 @@ import {
   MAX_IMAGE_SIZE_BYTES,
   OPTIMIZED_JPEG_QUALITY,
   OPTIMIZED_MAX_WIDTH,
+  cinemaPhotoAspectRatioError,
 } from "@/lib/uploads";
 import {
   CreateOrganizationFormSchema,
@@ -71,6 +72,28 @@ export async function createOrganization(
   const lema = (formData.get("lema") as string | null)?.trim() || "";
   const fotoPrincipal = formData.get("fotoPrincipal");
 
+  // Se lee el archivo (si vino uno válido) ANTES de crear la organización:
+  // si el layout elegido es "cinematica" y la foto no sirve para ese
+  // layout (ver cinemaPhotoAspectRatioError), hay que poder cortar acá y
+  // devolver el error sin haber creado nada todavía — no tendría sentido
+  // dar de alta la cuenta y recién ahí avisar que la foto no sirvió.
+  let fotoBuffer: Buffer | null = null;
+  if (
+    fotoPrincipal instanceof File &&
+    fotoPrincipal.size > 0 &&
+    ALLOWED_IMAGE_TYPES.includes(fotoPrincipal.type) &&
+    fotoPrincipal.size <= MAX_IMAGE_SIZE_BYTES
+  ) {
+    fotoBuffer = Buffer.from(await fotoPrincipal.arrayBuffer());
+    if (layout === "cinematica") {
+      const metadata = await sharp(fotoBuffer).metadata();
+      const aspectRatioError = cinemaPhotoAspectRatioError(metadata.width, metadata.height);
+      if (aspectRatioError) {
+        return { errors: { fotoPrincipal: [aspectRatioError] } };
+      }
+    }
+  }
+
   // Independientes entre sí (uno no depende del resultado del otro): se
   // corren en paralelo en vez de uno tras otro.
   const [passwordHash, organization] = await Promise.all([
@@ -81,16 +104,9 @@ export async function createOrganization(
   // La foto se procesa/sube DESPUÉS de crear la organización porque el
   // nombre del archivo en Blob incluye su id — mismo patrón que
   // updateEventSettings (app/actions/settings.ts), para poder
-  // sobreescribirla más adelante sin acumular blobs viejos. Si el
-  // tipo/tamaño no es válido, se ignora en silencio: es un campo opcional,
-  // no vale la pena frenar la creación de toda la cuenta por eso.
-  if (
-    fotoPrincipal instanceof File &&
-    fotoPrincipal.size > 0 &&
-    ALLOWED_IMAGE_TYPES.includes(fotoPrincipal.type) &&
-    fotoPrincipal.size <= MAX_IMAGE_SIZE_BYTES
-  ) {
-    const body = await sharp(Buffer.from(await fotoPrincipal.arrayBuffer()))
+  // sobreescribirla más adelante sin acumular blobs viejos.
+  if (fotoBuffer) {
+    const body = await sharp(fotoBuffer)
       .rotate()
       .resize({ width: OPTIMIZED_MAX_WIDTH, withoutEnlargement: true })
       .jpeg({ quality: OPTIMIZED_JPEG_QUALITY })
