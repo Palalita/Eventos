@@ -1680,6 +1680,11 @@ a {
   position: absolute;
   border-radius: 50%;
   filter: blur(70px);
+  /* Ya se anima infinito con transform (más abajo) — con esto el navegador
+     lo pasa a su propia capa de composición una sola vez en vez de
+     re-evaluarlo, más barato mientras la animación (y el blur, que es caro
+     de recalcular) corre sin parar. */
+  will-change: transform;
 }
 .landing-ambient-blob--1 {
   width: 480px;

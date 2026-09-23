@@ -37,33 +37,21 @@ export default function RevealImage({
     if (!el) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // Se declara acá afuera (no adentro del if) para poder desconectarlo
-    // en el cleanup pase lo que pase — si el componente se desmonta
-    // antes de que la imagen entre al viewport, si no se hace así el
-    // observer queda vivo para siempre.
-    let observer: IntersectionObserver | null = null;
     const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight * 0.9) {
-      setVisible(true);
-    } else {
-      setVisible(false);
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setVisible(true);
-            observer?.disconnect();
-          }
-        },
-        { threshold: 0.1 }
-      );
-      observer.observe(el);
-    }
+    setVisible(rect.top < window.innerHeight * 0.9);
 
-    if (reducedMotion) {
-      return () => observer?.disconnect();
-    }
+    if (reducedMotion) return;
 
+    // El listener de scroll (y su getBoundingClientRect en cada frame) solo
+    // se conecta mientras esta imagen está CERCA del viewport (margen
+    // generoso de 300px) — sin esto, cada RevealImage de la página (hasta
+    // 9 a la vez entre galería y vitrina) recalculaba su posición en TODOS
+    // los scroll aunque estuviera a miles de píxeles de la pantalla. El
+    // IntersectionObserver decide "cerca o no" de forma nativa/asíncrona,
+    // sin que nosotros forcemos layout en cada frame para saberlo.
     let raf = 0;
+    let listening = false;
+
     function updateOffset() {
       raf = 0;
       const r = el!.getBoundingClientRect();
@@ -75,11 +63,32 @@ export default function RevealImage({
     function onScroll() {
       if (!raf) raf = requestAnimationFrame(updateOffset);
     }
-    updateOffset();
-    window.addEventListener("scroll", onScroll, { passive: true });
+
+    const nearObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          if (!listening) {
+            window.addEventListener("scroll", onScroll, { passive: true });
+            listening = true;
+          }
+          updateOffset();
+        } else if (listening) {
+          window.removeEventListener("scroll", onScroll);
+          listening = false;
+          if (raf) {
+            cancelAnimationFrame(raf);
+            raf = 0;
+          }
+        }
+      },
+      { rootMargin: "300px 0px 300px 0px", threshold: 0 }
+    );
+    nearObserver.observe(el);
+
     return () => {
-      observer?.disconnect();
-      window.removeEventListener("scroll", onScroll);
+      nearObserver.disconnect();
+      if (listening) window.removeEventListener("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
   }, [parallaxSpeed]);
