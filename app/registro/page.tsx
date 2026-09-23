@@ -1,5 +1,6 @@
 // Página pública de registro (crear cuenta con el código de invitación). El
 // formulario real vive en ./SignupForm.tsx (componente de cliente).
+import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getEventSettings } from "@/lib/settings";
@@ -7,6 +8,11 @@ import { isValidTheme } from "@/lib/themes";
 import { isValidFont } from "@/lib/fonts";
 import { COMPANY_NAME } from "@/lib/company";
 import SignupForm from "./SignupForm";
+
+export const metadata: Metadata = {
+  title: `Crear mi invitación · ${COMPANY_NAME}`,
+  description: "Usa tu código de invitación para crear tu cuenta y subir fotos del evento.",
+};
 
 export default async function RegistroPage({
   searchParams,
