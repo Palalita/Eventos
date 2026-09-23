@@ -56,7 +56,7 @@ export default async function InvitadosPage() {
                     <input type="hidden" name="id" value={invitado.id} />
                     <ConfirmSubmitButton
                       className="btn btn-danger"
-                      confirmMessage={`¿Eliminar a ${invitado.name} (${invitado.email})? Ya no podrá entrar al sitio y sus fotos subidas también se borrarán. Esta acción no se puede deshacer.`}
+                      confirmMessage={`¿Eliminar a ${invitado.name} (${invitado.email})? Ya no podrá entrar al sitio, sus fotos subidas también se borrarán, y desaparecerá del historial de invitaciones. Esta acción no se puede deshacer.`}
                     >
                       Eliminar
                     </ConfirmSubmitButton>
