@@ -119,28 +119,43 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      <section className="landing-hero-modern">
-        <p className="platform-eyebrow">Sitios web para eventos</p>
-        <h1 className="landing-hero-modern-title">
-          El sitio de su evento, listo en minutos
-        </h1>
-        <p className="landing-hero-modern-subtitle">
-          Creamos sitios elegantes para XV años, bodas y todo tipo de
-          celebraciones: invitaciones digitales, galería de fotos compartida
-          con sus invitados, y un panel para administrar todo desde un solo
-          lugar.
-        </p>
-        <div className="landing-hero-modern-actions">
-          <Link href="/crear-cuenta" className="btn btn-primary">
-            Crear mi evento
-          </Link>
-          <Link href="/login" className="landing-hero-modern-link">
-            Ya tengo una cuenta
-          </Link>
+      <section className="landing-hero-full">
+        <div className="landing-hero-bg" aria-hidden="true">
+          <span className="landing-hero-blob landing-hero-blob--1" />
+          <span className="landing-hero-blob landing-hero-blob--2" />
+          <span className="landing-hero-blob landing-hero-blob--3" />
         </div>
+
+        <div className="landing-hero-modern">
+          <p className="platform-eyebrow">Sitios web para eventos</p>
+          <h1 className="landing-hero-modern-title">
+            El sitio de su evento, listo en minutos
+          </h1>
+          <p className="landing-hero-modern-subtitle">
+            Creamos sitios elegantes para XV años, bodas y todo tipo de
+            celebraciones: invitaciones digitales, galería de fotos compartida
+            con sus invitados, y un panel para administrar todo desde un solo
+            lugar.
+          </p>
+          <div className="landing-hero-modern-actions">
+            <Link href="/crear-cuenta" className="btn btn-primary">
+              Crear mi evento
+            </Link>
+            <Link href="/login" className="landing-hero-modern-link">
+              Ya tengo una cuenta
+            </Link>
+          </div>
+        </div>
+
+        <a href="#landing-panel" className="landing-hero-scroll-cue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span>Descubrir más</span>
+        </a>
       </section>
 
-      <div className="landing-panel">
+      <div className="landing-panel" id="landing-panel">
         <section className="landing-steps" aria-labelledby="landing-steps-title">
           <h2 id="landing-steps-title">Cómo funciona</h2>
           <hr className="landing-divider" />
