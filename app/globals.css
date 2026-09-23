@@ -1568,6 +1568,7 @@ a {
    animación"), no solo un bloque de texto arriba del panel. */
 .landing-hero-full {
   position: relative;
+  z-index: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1576,19 +1577,28 @@ a {
   overflow: hidden;
   padding: 2rem 1.5rem;
 }
-.landing-hero-bg {
+/* Fondo ambiental (manchas difuminadas que derivan lento) — nació en el
+   hero, pero se reusa en otras secciones (galería, servicios) para que
+   la animación no se sienta como algo que pasa una sola vez arriba de
+   todo. El contenedor que lo use necesita position:relative + z-index
+   propio (aunque sea 0, alcanza para formar su propio stacking
+   context) y overflow:hidden — ver .landing-hero-full más arriba,
+   .landing-gallery y .landing-services-modern más abajo. Con eso, el
+   contenido normal de la sección (títulos, grillas) queda arriba del
+   fondo solo, sin tener que acordarse de ponerle z-index a cada hijo. */
+.landing-ambient-bg {
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 }
-.landing-hero-blob {
+.landing-ambient-blob {
   position: absolute;
   border-radius: 50%;
   filter: blur(70px);
 }
-.landing-hero-blob--1 {
+.landing-ambient-blob--1 {
   width: 480px;
   height: 480px;
   top: -140px;
@@ -1597,7 +1607,7 @@ a {
   opacity: 0.07;
   animation: landing-blob-drift-1 18s ease-in-out infinite;
 }
-.landing-hero-blob--2 {
+.landing-ambient-blob--2 {
   width: 420px;
   height: 420px;
   bottom: -160px;
@@ -1606,7 +1616,7 @@ a {
   opacity: 0.1;
   animation: landing-blob-drift-2 22s ease-in-out infinite;
 }
-.landing-hero-blob--3 {
+.landing-ambient-blob--3 {
   width: 320px;
   height: 320px;
   top: 35%;
@@ -1614,6 +1624,18 @@ a {
   background: radial-gradient(circle, var(--landing-ink) 0%, transparent 70%);
   opacity: 0.05;
   animation: landing-blob-drift-3 26s ease-in-out infinite;
+}
+/* Dentro de .landing-panel el fondo es blanco puro, no el crema de la
+   página — las mismas opacidades ahí casi no se ven, así que se suben
+   un poco solo en ese contexto. */
+.landing-services-modern .landing-ambient-blob--1 {
+  opacity: 0.12;
+}
+.landing-services-modern .landing-ambient-blob--2 {
+  opacity: 0.16;
+}
+.landing-services-modern .landing-ambient-blob--3 {
+  opacity: 0.09;
 }
 @keyframes landing-blob-drift-1 {
   0%,
@@ -1643,14 +1665,14 @@ a {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .landing-hero-blob {
+  .landing-ambient-blob {
     animation: none;
   }
 }
 @media (max-width: 640px) {
   /* Los blobs grandes se ven bien en desktop; en celular ocupan
-     demasiado del viewport chico y compiten con el texto. */
-  .landing-hero-blob--3 {
+     demasiado del viewport chico y compiten con el resto. */
+  .landing-ambient-blob--3 {
     display: none;
   }
 }
@@ -1863,6 +1885,9 @@ a {
 }
 
 .landing-services-modern {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
   padding: 3rem 1.5rem;
   text-align: center;
 }
@@ -1924,9 +1949,12 @@ a {
 }
 
 .landing-gallery {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
   max-width: 1100px;
   margin: 0 auto 3rem;
-  padding: 0 1.5rem;
+  padding: 2rem 1.5rem;
   text-align: center;
 }
 .landing-gallery h2 {
@@ -1941,7 +1969,10 @@ a {
 .landing-gallery-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  /* Más separación que un grid común a propósito: cada foto se mueve
+     hasta ~±32px con el parallax (ver app/GalleryImage.tsx) y con
+     menos aire entre filas llegaba a traslaparse con la fila vecina. */
+  gap: 2.5rem 1.5rem;
   list-style: none;
   padding: 0;
   margin: 0;

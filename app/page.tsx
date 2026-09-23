@@ -102,6 +102,19 @@ const GALERIA_PLACEHOLDER = [
   "https://picsum.photos/seed/evento-plataforma-6/500/500",
 ];
 
+// Manchas difuminadas que derivan lento en el fondo — nació en el hero,
+// se reusa en "Todo lo que incluye su sitio" y en la galería para que la
+// página se sienta animada en más de un lugar, no solo arriba de todo.
+function AmbientBackground() {
+  return (
+    <div className="landing-ambient-bg" aria-hidden="true">
+      <span className="landing-ambient-blob landing-ambient-blob--1" />
+      <span className="landing-ambient-blob landing-ambient-blob--2" />
+      <span className="landing-ambient-blob landing-ambient-blob--3" />
+    </div>
+  );
+}
+
 export default function LandingPage() {
   return (
     <main className="landing">
@@ -120,11 +133,7 @@ export default function LandingPage() {
       </header>
 
       <section className="landing-hero-full">
-        <div className="landing-hero-bg" aria-hidden="true">
-          <span className="landing-hero-blob landing-hero-blob--1" />
-          <span className="landing-hero-blob landing-hero-blob--2" />
-          <span className="landing-hero-blob landing-hero-blob--3" />
-        </div>
+        <AmbientBackground />
 
         <div className="landing-hero-modern">
           <p className="platform-eyebrow">Sitios web para eventos</p>
@@ -173,6 +182,7 @@ export default function LandingPage() {
         </section>
 
         <section className="landing-services-modern" aria-labelledby="landing-services-title">
+          <AmbientBackground />
           <h2 id="landing-services-title">Todo lo que incluye su sitio</h2>
           <hr className="landing-divider" />
           <ul className="landing-services-modern-grid">
@@ -188,6 +198,7 @@ export default function LandingPage() {
       </div>
 
       <section className="landing-gallery" aria-labelledby="landing-gallery-title">
+        <AmbientBackground />
         <h2 id="landing-gallery-title">Así se ve la galería de su evento</h2>
         <p className="landing-gallery-subtitle">
           Fotos de ejemplo — cuando cree su sitio, aquí aparecerán las que
