@@ -1717,7 +1717,7 @@ a {
 .landing-hero-modern {
   position: relative;
   z-index: 1;
-  max-width: 720px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 0 1.5rem;
   text-align: center;
@@ -1726,14 +1726,17 @@ a {
   align-items: center;
   gap: 1rem;
 }
+/* Más grande a propósito — el título es el elemento que "abarca la
+   sección", no un renglón más entre el resto del texto del hero. */
 .landing-hero-modern-title {
   font-family: var(--font-body);
   font-weight: 600;
   color: var(--landing-ink);
-  font-size: clamp(2rem, 5vw, 3.1rem);
-  line-height: 1.15;
+  font-size: clamp(2.75rem, 8vw, 6rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
   margin: 0;
-  max-width: 640px;
+  max-width: 900px;
 }
 .landing-hero-modern-subtitle {
   font-size: 1.08rem;
@@ -1797,6 +1800,33 @@ a {
 }
 @media (prefers-reduced-motion: reduce) {
   .landing-hero-modern > * {
+    animation: none;
+  }
+}
+/* El título, al ser el elemento más grande e importante del hero, tiene
+   su propia entrada (no la genérica de arriba): más recorrido, un
+   toque de escala + blur, y una curva "ease-out" pronunciada — mismo
+   mecanismo (animación CSS por keyframes, sin librería externa), solo
+   una versión con más presencia para este elemento puntual. Va después
+   de la regla ".landing-hero-modern > *" para ganarle en empate de
+   especificidad (mismo puntaje, pero esta viene más abajo). */
+.landing-hero-modern-title {
+  animation: landing-hero-title-in 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes landing-hero-title-in {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.96);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero-modern-title {
     animation: none;
   }
 }

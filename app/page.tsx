@@ -163,7 +163,7 @@ export default function LandingPage() {
         <div className="landing-hero-modern">
           <p className="platform-eyebrow">Sitios web para eventos</p>
           <h1 className="landing-hero-modern-title">
-            El sitio de su evento, listo en minutos
+            El sitio para su evento, listo en minutos
           </h1>
           <p className="landing-hero-modern-subtitle">
             Creamos sitios elegantes para XV años, bodas y todo tipo de
