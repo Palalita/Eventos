@@ -6,7 +6,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY_NAME } from "@/lib/company";
-import Reveal from "./Reveal";
+import GalleryImage from "./GalleryImage";
 
 // Metadata propia (no la genérica del layout raíz — ver
 // app/layout.tsx#generateMetadata): esta es la única página realmente
@@ -196,9 +196,11 @@ export default function LandingPage() {
         <ul className="landing-gallery-grid">
           {GALERIA_PLACEHOLDER.map((src, index) => (
             <li key={src}>
-              <Reveal delayMs={(index % 3) * 100}>
-                <img src={src} alt="" width={500} height={500} loading="lazy" />
-              </Reveal>
+              <GalleryImage
+                src={src}
+                delayMs={(index % 3) * 100}
+                parallaxSpeed={index % 2 === 0 ? 1 : -0.6}
+              />
             </li>
           ))}
         </ul>

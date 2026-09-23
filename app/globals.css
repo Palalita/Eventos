@@ -1946,8 +1946,10 @@ a {
   padding: 0;
   margin: 0;
 }
-.landing-gallery-grid .reveal {
+.landing-gallery-item {
   height: 100%;
+  /* La actualiza en cada scroll app/GalleryImage.tsx (parallax) — sin
+     transition acá a propósito, se recalcula cuadro a cuadro. */
 }
 .landing-gallery-grid img {
   display: block;
@@ -1956,6 +1958,30 @@ a {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 1.25rem;
+}
+/* Entrada de cada foto: crece desde un poco más chica y desenfocada
+   hasta su tamaño real — más presencia que un simple fade. El parallax
+   en sí (traslado en Y) lo aplica app/GalleryImage.tsx en el div
+   contenedor (.landing-gallery-item), no acá, para no pelear con esta
+   transición. */
+.landing-gallery-img {
+  opacity: 0;
+  transform: scale(0.92);
+  filter: blur(6px);
+  transition: opacity 0.8s ease, transform 0.8s ease, filter 0.8s ease;
+}
+.landing-gallery-img--visible {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-gallery-img {
+    transition: none;
+    opacity: 1;
+    transform: scale(1);
+    filter: none;
+  }
 }
 @media (max-width: 640px) {
   .landing-gallery-grid {
