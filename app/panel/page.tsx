@@ -137,6 +137,13 @@ export default async function Home() {
             title="Fotos y videos del evento"
           />
         </>
+      ) : settings.lugar.trim() === "" ? (
+        // El admin todavía no cargó el lugar del evento (campo obligatorio
+        // de app/admin/contenido/page.tsx) — señal de que nunca guardó el
+        // formulario de contenido, así que la portada seguiría mostrando
+        // "hoy" como fecha y sin lugar. Mejor este aviso que una portada a
+        // medio armar apenas el invitado se registra.
+        <SitioEnPreparacion nombreEvento={settings.tituloEvento} />
       ) : (
         <>
           <GuestHero settings={settings} fechaFormateada={fechaFormateada} />
@@ -151,6 +158,35 @@ export default async function Home() {
         </>
       )}
     </main>
+  );
+}
+
+// Lo que ve un invitado si entra antes de que el admin termine de cargar el
+// contenido de su evento (ver el chequeo de settings.lugar más arriba). El
+// tema/tipografía que eligió ese admin ya se aplica solo (vía la clase
+// .theme-*/.font-* que app/layout.tsx pone en <html> según la sesión), así
+// que esto se ve distinto para cada organización sin código extra acá.
+function SitioEnPreparacion({ nombreEvento }: { nombreEvento: string }) {
+  return (
+    <section className="hero site-building">
+      <Reveal>
+        <div className="site-building-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path
+              d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a5 5 0 0 1-6.8 6.8L5.5 21.5a1.5 1.5 0 0 1-2-2L12.7 10a5 5 0 0 1 6.8-6.8Z"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <p className="hero-eyebrow-italic">{nombreEvento}</p>
+        <h1 className="site-building-title">El sitio se está preparando</h1>
+        <p className="site-building-text">
+          El administrador todavía está armando el contenido de este evento.
+          Vuelve a entrar más tarde para ver las novedades.
+        </p>
+      </Reveal>
+    </section>
   );
 }
 

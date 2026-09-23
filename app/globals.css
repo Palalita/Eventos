@@ -231,6 +231,54 @@ a {
   font-size: 1.8rem;
   color: var(--gold);
 }
+
+/* --- Invitado: sitio del evento todavía sin contenido (app/panel/page.tsx
+   #SitioEnPreparacion) --- se muestra en vez de GuestHero/GuestHome
+   mientras el admin no cargó el lugar del evento (campo obligatorio del
+   formulario de contenido) — evita mostrar una portada a medio armar
+   (fecha "hoy", sin lugar) apenas el invitado se registra. Usa las mismas
+   variables --rose/--gold del tema activo, así que ya sale con el color
+   que eligió cada administrador sin código extra. */
+.site-building {
+  gap: 1.2rem;
+}
+.site-building-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 999px;
+  background: var(--rose-light);
+  color: var(--rose-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: site-building-pulse 2.4s ease-in-out infinite;
+}
+.site-building-icon svg {
+  width: 2rem;
+  height: 2rem;
+}
+@keyframes site-building-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+.site-building-title {
+  margin: 0;
+}
+.site-building-text {
+  max-width: 480px;
+  color: var(--text);
+  opacity: 0.72;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-building-icon {
+    animation: none;
+  }
+}
 .hero-name {
   font-size: clamp(2.5rem, 8vw, 5rem);
   color: var(--rose-dark);
@@ -1368,7 +1416,12 @@ a {
   cursor: pointer;
 }
 
-/* Aparición progresiva de secciones al hacer scroll */
+/* Aparición progresiva de secciones al hacer scroll. Base compartida por
+   DOS componentes distintos: app/components/Reveal.tsx (modificador
+   .reveal-visible, un guion) y app/Reveal.tsx (modificador
+   .reveal--visible, dos guiones, más abajo en este archivo) — no declarar
+   `.reveal` de nuevo en otro lado, o su opacity:0 pisa por orden de
+   cascada el opacity:1 de cualquiera de los dos modificadores. */
 .reveal {
   opacity: 0;
   transform: translateY(28px);
@@ -1831,23 +1884,17 @@ a {
   }
 }
 
-/* Fade + slide-up al entrar en el viewport (ver app/Reveal.tsx). Sin JS
-   se queda visible (.reveal solo, sin --visible, nunca se renderiza). */
-.reveal {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
+/* Fade + slide-up al entrar en el viewport (ver app/Reveal.tsx). Reusa la
+   misma base .reveal de más arriba (app/components/Reveal.tsx) — ese
+   componente usa el modificador .reveal-visible (un guion) y este usa
+   .reveal--visible (dos, estilo BEM); tener acá una SEGUNDA declaración de
+   .reveal con las mismas propiedades pisaba, por orden de cascada, el
+   opacity:1 de .reveal-visible del otro componente y lo dejaba invisible
+   para siempre — si se toca esta sección, no volver a declarar `.reveal`
+   acá, solo el modificador. */
 .reveal--visible {
   opacity: 1;
   transform: translateY(0);
-}
-@media (prefers-reduced-motion: reduce) {
-  .reveal {
-    transition: none;
-    opacity: 1;
-    transform: none;
-  }
 }
 
 /* Vitrina de los 3 tipos de evento (bodas, convivios, XV años), justo
