@@ -43,11 +43,6 @@ enum Role {
   GUEST
 }
 
-enum OrgStatus {
-  ACTIVE
-  SUSPENDED
-}
-
 enum PhotoStatus {
   PENDING
   APPROVED
@@ -80,10 +75,9 @@ model Organization {
   // Paleta de color y tipografía se eligen por separado (ver
   // app/crear-cuenta/CreateOrgForm.tsx, el wizard de 3 pasos) — cada una
   // referencia un preset (lib/themes.ts / lib/fonts.ts), nunca CSS libre.
-  theme     String    @default("xv_rosa_dorado")
-  font      String    @default("clasica")
-  status    OrgStatus @default(ACTIVE)
-  createdAt DateTime  @default(now())
+  theme     String   @default("xv_rosa_dorado")
+  font      String   @default("clasica")
+  createdAt DateTime @default(now())
 
   users               User[]
   photoRequests       PhotoRequest[]

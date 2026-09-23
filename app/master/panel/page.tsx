@@ -1,15 +1,14 @@
 // Panel de master: lista todas las organizaciones de la plataforma, con
-// quién es su admin, cuántos invitados tiene, un botón para
-// activarla/suspenderla (ver toggleOrganizationStatus en
-// app/actions/master.ts), y uno para borrar al admin y sus invitados
-// cuando termina el plazo contratado (ver deleteOrganizationAdmin en el
-// mismo archivo). Nada de crear organizaciones a mano acá —eso ya lo
-// cubre /crear-cuenta— ni billing todavía.
+// quién es su admin, cuántos invitados tiene, y un botón para borrar al
+// admin y sus invitados cuando termina el plazo contratado (ver
+// deleteOrganizationAdmin en app/actions/master.ts). Nada de crear
+// organizaciones a mano acá —eso ya lo cubre /crear-cuenta— ni billing
+// todavía.
 import type { Metadata } from "next";
 import { requireMaster } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { logout } from "@/app/actions/auth";
-import { toggleOrganizationStatus, deleteOrganizationAdmin } from "@/app/actions/master";
+import { deleteOrganizationAdmin } from "@/app/actions/master";
 import { COMPANY_NAME } from "@/lib/company";
 import ConfirmSubmitButton from "../ConfirmSubmitButton";
 
@@ -19,6 +18,18 @@ export const metadata: Metadata = {
 };
 
 const fechaFormatter = new Intl.DateTimeFormat("es-GT", { dateStyle: "medium" });
+
+// Nombre + un dato secundario chico debajo (slug de la organización,
+// correo del admin) — se repite para las columnas "Evento" y "Admin".
+function NameWithSecondary({ primary, secondary }: { primary: string; secondary: string }) {
+  return (
+    <>
+      {primary}
+      <br />
+      <span className="device-table-secondary">{secondary}</span>
+    </>
+  );
+}
 
 export default async function MasterPanelPage() {
   await requireMaster();
@@ -59,7 +70,6 @@ export default async function MasterPanelPage() {
                   <th>Admin</th>
                   <th>Invitados</th>
                   <th>Creada</th>
-                  <th>Estado</th>
                   <th></th>
                 </tr>
               </thead>
@@ -69,19 +79,11 @@ export default async function MasterPanelPage() {
                   return (
                     <tr key={org.id}>
                       <td>
-                        {org.name}
-                        <br />
-                        <span style={{ fontSize: "0.78rem", opacity: 0.65 }}>{org.slug}</span>
+                        <NameWithSecondary primary={org.name} secondary={org.slug} />
                       </td>
                       <td>
                         {admin ? (
-                          <>
-                            {admin.name}
-                            <br />
-                            <span style={{ fontSize: "0.78rem", opacity: 0.65 }}>
-                              {admin.email}
-                            </span>
-                          </>
+                          <NameWithSecondary primary={admin.name} secondary={admin.email} />
                         ) : (
                           "—"
                         )}
@@ -89,22 +91,6 @@ export default async function MasterPanelPage() {
                       <td>{org._count.users}</td>
                       <td>{fechaFormatter.format(org.createdAt)}</td>
                       <td>
-                        {org.status === "ACTIVE" ? (
-                          <span className="status-badge status-approved">Activa</span>
-                        ) : (
-                          <span className="status-badge status-rejected">Suspendida</span>
-                        )}
-                      </td>
-                      <td style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                        <form action={toggleOrganizationStatus}>
-                          <input type="hidden" name="id" value={org.id} />
-                          <button
-                            type="submit"
-                            className={org.status === "ACTIVE" ? "btn btn-danger" : "btn btn-secondary"}
-                          >
-                            {org.status === "ACTIVE" ? "Suspender" : "Reactivar"}
-                          </button>
-                        </form>
                         {admin && (
                           <form action={deleteOrganizationAdmin}>
                             <input type="hidden" name="organizationId" value={org.id} />

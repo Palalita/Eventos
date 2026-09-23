@@ -2,8 +2,8 @@
 
 // Botón de submit que pide confirmación antes de disparar la acción del
 // <form> que lo contiene — para acciones irreversibles como borrar un
-// administrador y sus invitados (ver toggleOrganizationStatus, que en
-// cambio es reversible y no necesita esto).
+// administrador y sus invitados (ver deleteOrganizationAdmin en
+// app/actions/master.ts).
 export default function ConfirmSubmitButton({
   confirmMessage,
   className,

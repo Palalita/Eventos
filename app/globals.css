@@ -1449,6 +1449,10 @@ a {
   font-size: 0.9rem;
   white-space: nowrap;
 }
+.device-table-secondary {
+  font-size: 0.78rem;
+  opacity: 0.65;
+}
 
 /* --- Landing pública de la empresa (app/page.tsx) ---
    Look distinto al resto del sitio a propósito (ver charla con el

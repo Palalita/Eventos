@@ -1,6 +1,6 @@
 // Server Actions de /master: login separado del público (ver
 // app/actions/auth.ts#login, que explícitamente RECHAZA a los MASTER) y
-// activar/suspender organizaciones desde el panel.
+// borrar el admin+invitados de una organización desde el panel.
 "use server";
 
 import bcrypt from "bcryptjs";
@@ -44,32 +44,16 @@ export async function masterLogin(
   redirect("/master/panel");
 }
 
-// El admin de una organización puede suspenderla (deja de poder loguear
-// nadie de esa organización) o reactivarla. No borra nada — es reversible.
-export async function toggleOrganizationStatus(formData: FormData) {
-  await requireMaster();
-  const id = formData.get("id") as string;
-
-  const organization = await db.organization.findUnique({ where: { id } });
-  if (!organization) return;
-
-  await db.organization.update({
-    where: { id },
-    data: { status: organization.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE" },
-  });
-
-  revalidatePath("/master/panel");
-}
-
 // Borra al admin de una organización y, con él, a todos los invitados que
 // entraron con sus códigos (todo GUEST de la misma organización — acá no
 // hay más de un admin por organización, así que "invitado por este admin"
 // es lo mismo que "invitado de esta organización"). Pensado para cuando
 // termina el plazo contratado por un cliente y hay que limpiar sus
-// cuentas. No borra la Organization en sí (evento, fotos ya aprobadas,
-// invitaciones) — solo las cuentas de usuario; ver conversación con el
-// usuario. Cada User borrado se lleva en cascada (por la FK) sus propias
-// PhotoRequest/TrustedDevice/DeviceVerification.
+// cuentas. No borra la Organization en sí (nombre, tema, configuración
+// del evento, invitaciones ya generadas) — solo las cuentas de usuario.
+// Ojo: cada User borrado se lleva en cascada (por la FK) sus propias
+// PhotoRequest/TrustedDevice/DeviceVerification, así que las fotos que
+// esos usuarios subieron sí se pierden.
 export async function deleteOrganizationAdmin(formData: FormData) {
   await requireMaster();
   const organizationId = formData.get("organizationId") as string;
