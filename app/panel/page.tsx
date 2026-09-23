@@ -14,6 +14,7 @@
 //   GuestHome()         -> secciones activables + barra flotante (QR/subir)
 //   MediaGallery()      -> el collage de fotos/videos aprobados
 //   MisEnvios()         -> "mis envíos en trámite" de un invitado puntual
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
@@ -29,6 +30,12 @@ import ScrollHint from "../components/ScrollHint";
 import HeroPhoto from "../components/HeroPhoto";
 import PendingList from "../components/PendingList";
 import NotificationsBell from "../components/NotificationsBell";
+
+// Sitio privado de UN evento puntual (requiere sesión) — nunca debe salir
+// indexado, mismo motivo que /master/panel.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type EventSettings = Awaited<ReturnType<typeof getEventSettings>>;
 type SectionFlags = Awaited<ReturnType<typeof getSectionFlags>>;
