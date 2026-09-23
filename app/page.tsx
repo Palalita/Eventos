@@ -166,8 +166,7 @@ export default function LandingPage() {
             El sitio para su evento, listo en minutos
           </h1>
           <p className="landing-hero-modern-subtitle">
-            Creamos sitios elegantes para XV años, bodas y todo tipo de
-            celebraciones.
+            Creamos sitios elegantes para todo tipo de celebraciones.
           </p>
           <div className="landing-hero-modern-actions">
             <Link href="/crear-cuenta" className="btn btn-primary">
