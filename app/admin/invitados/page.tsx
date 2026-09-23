@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/dal";
 import { db } from "@/lib/db";
+import { deleteGuest } from "@/app/actions/invitados";
+import ConfirmSubmitButton from "@/app/components/ConfirmSubmitButton";
 import QrScanner from "./QrScanner";
 
 export default async function InvitadosPage() {
@@ -34,6 +36,7 @@ export default async function InvitadosPage() {
               <th>Nombre</th>
               <th>Correo</th>
               <th>Asistió</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -47,6 +50,17 @@ export default async function InvitadosPage() {
                   ) : (
                     <span className="status-badge status-pending">No</span>
                   )}
+                </td>
+                <td>
+                  <form action={deleteGuest}>
+                    <input type="hidden" name="id" value={invitado.id} />
+                    <ConfirmSubmitButton
+                      className="btn btn-danger"
+                      confirmMessage={`¿Eliminar a ${invitado.name} (${invitado.email})? Ya no podrá entrar al sitio y sus fotos subidas también se borrarán. Esta acción no se puede deshacer.`}
+                    >
+                      Eliminar
+                    </ConfirmSubmitButton>
+                  </form>
                 </td>
               </tr>
             ))}

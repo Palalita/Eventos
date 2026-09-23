@@ -10,7 +10,7 @@ import { db } from "@/lib/db";
 import { logout } from "@/app/actions/auth";
 import { deleteOrganizationAdmin } from "@/app/actions/master";
 import { COMPANY_NAME } from "@/lib/company";
-import ConfirmSubmitButton from "../ConfirmSubmitButton";
+import ConfirmSubmitButton from "@/app/components/ConfirmSubmitButton";
 
 export const metadata: Metadata = {
   title: `Panel interno · ${COMPANY_NAME}`,
