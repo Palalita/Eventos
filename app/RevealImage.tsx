@@ -37,10 +37,36 @@ export default function RevealImage({
     if (!el) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    // Se declara acá afuera (no adentro del if) para poder desconectarlo
+    // en el cleanup pase lo que pase — si el componente se desmonta
+    // antes de que la imagen entre al viewport, si no se hace así el
+    // observer queda vivo para siempre.
+    let revealObserver: IntersectionObserver | null = null;
     const rect = el.getBoundingClientRect();
-    setVisible(rect.top < window.innerHeight * 0.9);
+    if (rect.top < window.innerHeight * 0.9) {
+      setVisible(true);
+    } else {
+      setVisible(false);
+      // threshold ajustado (no rootMargin) para que el crecimiento+fade se
+      // vea JUSTO cuando la imagen entra al viewport — si esto compartiera
+      // el margen generoso del observer de abajo, la imagen ya estaría
+      // completamente revelada bastante antes de que el usuario llegara a
+      // verla, y el efecto pasaría inadvertido.
+      revealObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setVisible(true);
+            revealObserver?.disconnect();
+          }
+        },
+        { threshold: 0.1 }
+      );
+      revealObserver.observe(el);
+    }
 
-    if (reducedMotion) return;
+    if (reducedMotion) {
+      return () => revealObserver?.disconnect();
+    }
 
     // El listener de scroll (y su getBoundingClientRect en cada frame) solo
     // se conecta mientras esta imagen está CERCA del viewport (margen
@@ -48,7 +74,9 @@ export default function RevealImage({
     // 9 a la vez entre galería y vitrina) recalculaba su posición en TODOS
     // los scroll aunque estuviera a miles de píxeles de la pantalla. El
     // IntersectionObserver decide "cerca o no" de forma nativa/asíncrona,
-    // sin que nosotros forcemos layout en cada frame para saberlo.
+    // sin que nosotros forcemos layout en cada frame para saberlo. Separado
+    // del revealObserver de arriba a propósito: este solo gatea el
+    // parallax, nunca toca `visible`.
     let raf = 0;
     let listening = false;
 
@@ -67,7 +95,6 @@ export default function RevealImage({
     const nearObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setVisible(true);
           if (!listening) {
             window.addEventListener("scroll", onScroll, { passive: true });
             listening = true;
@@ -87,6 +114,7 @@ export default function RevealImage({
     nearObserver.observe(el);
 
     return () => {
+      revealObserver?.disconnect();
       nearObserver.disconnect();
       if (listening) window.removeEventListener("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
