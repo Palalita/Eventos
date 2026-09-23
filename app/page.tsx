@@ -226,11 +226,13 @@ export default function LandingPage() {
           <ol className="landing-steps-grid">
             {PASOS.map((paso, index) => (
               <li key={paso.title}>
-                <span className="landing-step-number" aria-hidden="true">
-                  {index + 1}
-                </span>
-                <h3>{paso.title}</h3>
-                <p>{paso.description}</p>
+                <Reveal delayMs={index * 100}>
+                  <span className="landing-step-number" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <h3>{paso.title}</h3>
+                  <p>{paso.description}</p>
+                </Reveal>
               </li>
             ))}
           </ol>
@@ -241,11 +243,13 @@ export default function LandingPage() {
           <h2 id="landing-services-title">Todo lo que incluye su sitio</h2>
           <hr className="landing-divider" />
           <ul className="landing-services-modern-grid">
-            {SERVICIOS.map((servicio) => (
+            {SERVICIOS.map((servicio, index) => (
               <li key={servicio.title}>
-                <div className="landing-service-icon">{servicio.icon}</div>
-                <h3>{servicio.title}</h3>
-                <p>{servicio.description}</p>
+                <Reveal delayMs={index * 100}>
+                  <div className="landing-service-icon">{servicio.icon}</div>
+                  <h3>{servicio.title}</h3>
+                  <p>{servicio.description}</p>
+                </Reveal>
               </li>
             ))}
           </ul>
