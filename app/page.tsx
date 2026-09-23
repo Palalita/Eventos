@@ -161,7 +161,6 @@ export default function LandingPage() {
         <AmbientBackground />
 
         <div className="landing-hero-modern">
-          <p className="platform-eyebrow">Sitios web para eventos</p>
           <h1 className="landing-hero-modern-title">
             El sitio para su evento, listo en minutos
           </h1>
