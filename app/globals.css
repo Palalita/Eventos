@@ -726,7 +726,12 @@ a {
   font-weight: 500;
   margin-top: 0.6rem;
 }
-.auth-form input {
+/* :not(...) para no pisar el ancho de 1px de .theme-option-input (el radio
+   oculto de los pickers de tema/tipografía/layout) — misma especificidad
+   (una clase + un elemento) le ganaba por orden de declaración y el radio
+   invisible terminaba ocupando el 100% del ancho de su tarjeta, generando
+   overflow horizontal en mobile. */
+.auth-form input:not([type="radio"]):not([type="checkbox"]) {
   display: block;
   width: 100%;
   padding: 0.6rem 0.8rem;
